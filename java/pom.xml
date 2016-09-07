@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>net.java</groupId>
+        <artifactId>jvnet-parent</artifactId>
+        <version>5</version>
+    </parent>
+    <groupId>ru.nsc.interval</groupId>
+    <artifactId>thermocompensation-parent</artifactId>
+    <version>0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>thermocompensation-parent</name>
+    <description>
+        Aggregator of Thermocompensation.
+    </description>
+    <url>http://github.com/projects/jinterval</url>
+
+    <properties>
+        <jna.version>4.2.2</jna.version>
+        <junitVersion>4.12</junitVersion>
+    </properties>
+
+    <modules>
+        <module>thermocompensation-model</module>
+    </modules>
+    
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junitVersion}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.java.jinterval</groupId>
+            <artifactId>jinterval-interval-java</artifactId>
+            <version>0.1-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+    
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <scm>
+        <connection>scm:git:https://github.com/nadezhin/thermocompensation</connection>
+        <developerConnection>scm:git:https://github.com/nadezhin/thermocompensation</developerConnection>
+        <url>https://github.com/nadezhin/thermocompensation</url>
+    </scm>
+</project>

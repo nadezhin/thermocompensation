@@ -1,0 +1,15 @@
+This directory contains modification of HLPK-4.47 taht makes it reenterable.
+Build in Linux or in MinGW:
+1) Download
+http://ftp.gnu.org/gnu/glpk/glpk-4.47.tar.gz ;
+2) Unpack it to the working directory WRKDIR/glpk-4.47;
+3) Copy directory glpk_patch/glpk-4.47 from this repository to working directory WRKDIR/glpk-4.47 to override modified files;
+4) From WRKDIR/glpk-4.47 run
+./configure --enable-dl
+5) From WRKDIR/glpk-4.47 run
+make
+If build is by MinGW
+make LDFLAGS=-no-undefined
+6) Find shared library in From WRKDIR/glpk-4.47/src/libs/libglpk.so
+and copy it to lib/libglpk32.so or to lib/libglpk64.so .
+
