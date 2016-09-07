@@ -2,6 +2,7 @@ package ru.nsc.interval.thermocompensation.model;
 
 import java.math.BigInteger;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import net.java.jinterval.interval.set.SetInterval;
 import net.java.jinterval.interval.set.SetIntervalOps;
@@ -811,7 +812,8 @@ public class PolyModel {
 
     /**
      * Calculate XS exactly as double
-     * @param infbit INFBIT coefficient 
+     *
+     * @param infbit INFBIT coefficient
      * @param sbit SBIT coefficient
      * @param adcOut temperature
      * @return exact double specification XS
@@ -821,9 +823,10 @@ public class PolyModel {
     }
 
     /**
-     * Calculate integer approximation of XS exactly
-     * May be a little different from hardware
-     * @param infbit INFBIT coefficient 
+     * Calculate integer approximation of XS exactly May be a little different
+     * from hardware
+     *
+     * @param infbit INFBIT coefficient
      * @param sbit SBIT coefficient
      * @param adcOut temperature
      * @return approximate integer XS
@@ -832,7 +835,7 @@ public class PolyModel {
         return (int) Math.rint((adcOut - (1535 + 8 * infbit)) * (16 + sbit) / 32.);
     }
 
-// Here are polynomial coefficients expressed by the bit encoding    
+// Here are polynomial coefficients expressed by the bit encoding
 // K0 = 1032
 // K1 = -195 -2*K1BIT<8>  in [-705,-195]
 // K2 = (20 + K2BIT<7>)/2 in [10,73.5]
@@ -841,13 +844,11 @@ public class PolyModel {
 // K5 = K5BIT<4>/16 in [0,0.9375]
 // SCALE = (SBIT<5> + 16)/32 * 2^{-8} in [0.5,1.46875]
 // INF = 1535 + 8*INFBIT<6> in [1535,2039]
-    
     /**
-     * For a given XS value polynomial is linear function of its coefficient encodings
-     * if we ignore rounding errors.
-     * This method computes this linear function
-     * t[0] is constant term
-     * t[i] is coefficient before K-i-BIT
+     * For a given XS value polynomial is linear function of its coefficient
+     * encodings if we ignore rounding errors. This method computes this linear
+     * function t[0] is constant term t[i] is coefficient before K-i-BIT
+     *
      * @param t array to return linear function
      * @param xs given XS value
      */
@@ -872,11 +873,11 @@ public class PolyModel {
     }
 
     /**
-     * For a given XS derivative polynomial by XS is linear function of its coefficient encodings
-     * if we ignore rounding errors.
-     * This method computes this linear function
-     * t[0] is constant term
-     * t[i] is coefficient before K-i-BIT
+     * For a given XS derivative polynomial by XS is linear function of its
+     * coefficient encodings if we ignore rounding errors. This method computes
+     * this linear function t[0] is constant term t[i] is coefficient before
+     * K-i-BIT
+     *
      * @param t array to return linear function
      * @param xs given XS value
      */
@@ -906,6 +907,7 @@ public class PolyModel {
 
     /**
      * A double approximation to fillCoeffSpecification
+     *
      * @param t array to return linear function
      * @param xs given XS value
      */
@@ -931,6 +933,7 @@ public class PolyModel {
 
     /**
      * An old double approximation to fillCoeffSpecification
+     *
      * @param t array to return linear function
      * @param xs given XS value
      */
@@ -955,8 +958,8 @@ public class PolyModel {
     }
 
     /**
-     * Compute specification (without rounding errors) of polynomial
-     * evaluator
+     * Compute specification (without rounding errors) of polynomial evaluator
+     *
      * @param inp input coefficients and temperature
      * @return Rational specification value
      */
@@ -974,8 +977,9 @@ public class PolyModel {
     }
 
     /**
-     * Compute error between specification of polynomial
-     * evaluator and actual hardware
+     * Compute error between specification of polynomial evaluator and actual
+     * hardware
+     *
      * @param inp input coefficients and temperature
      * @param fixBugP true to fix carry bug in current chip
      * @return Rational error value
@@ -1034,12 +1038,20 @@ public class PolyModel {
 
     /**
      * Read input parameters from a file specified by the command-line argument
-     * and print its evaluation on all temperatures exactly as the hardware
+     * and print its evaluation on all temperatures exactly as the hardware.
+     *
+     * An example of file contents: 1: 31 15 127 63 15 15 7 0 0 0 7
+     *
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
         testPoly();
-        List<List<PolyState.Inp>> inps = ParseTestInps.parseTestInps(Paths.get(args[0]));
+        List<List<PolyState.Inp>> inps;
+        if (args.length > 0) {
+            inps = ParseTestInps.parseTestInps(Paths.get(args[0]));
+        } else {
+            inps = Arrays.asList(Arrays.asList(PolyState.Inp.genNom()));
+        }
         for (int chipNo = 0; chipNo < inps.size(); chipNo++) {
             List<PolyState.Inp> inps1 = inps.get(chipNo);
             for (PolyState.Inp inp : inps1) {
