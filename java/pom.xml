@@ -9,45 +9,40 @@
         <artifactId>jvnet-parent</artifactId>
         <version>5</version>
     </parent>
-    <groupId>ru.nsc.interval</groupId>
-    <artifactId>thermocompensation-parent</artifactId>
+    <groupId>ru.nsc.interval.thermocompensation</groupId>
+    <artifactId>parent</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>thermocompensation-parent</name>
+    <name>parent</name>
     <description>
         Aggregator of Thermocompensation.
     </description>
     <url>http://github.com/projects/jinterval</url>
 
-    <properties>
-        <jna.version>4.2.2</jna.version>
-        <junitVersion>4.12</junitVersion>
-    </properties>
-
     <modules>
-        <module>thermocompensation-model</module>
+        <module>model</module>
     </modules>
     
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junitVersion}</version>
+            <version>4.12</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.java.jinterval</groupId>
-            <artifactId>jinterval-interval-java</artifactId>
-            <version>0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
     
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>net.java.jinterval</groupId>
+                <artifactId>jinterval-interval-java</artifactId>
+                <version>0.1-SNAPSHOT</version>
+            </dependency>
+            <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>${jna.version}</version>
+                <version>4.2.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -69,6 +64,6 @@
     <scm>
         <connection>scm:git:https://github.com/nadezhin/thermocompensation</connection>
         <developerConnection>scm:git:https://github.com/nadezhin/thermocompensation</developerConnection>
-        <url>https://github.com/nadezhin/thermocompensation</url>
+        <url>https://github.com/nadezhin/thermocompensation/java</url>
     </scm>
 </project>

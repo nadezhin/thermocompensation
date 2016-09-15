@@ -2,30 +2,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>ru.nsc.interval</groupId>
-        <artifactId>thermocompensation-parent</artifactId>
+        <groupId>ru.nsc.interval.thermocompensation</groupId>
+        <artifactId>parent</artifactId>
         <version>0.1-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
-    <artifactId>thermocompensation-model</artifactId>
+    <artifactId>model</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>thermocompemsation-model</name>
+    <name>model</name>
     <description>
         Model of the thermocompensation device.
     </description>
 
     <dependencies>
-        <!--dependency>
+        <dependency>
             <groupId>net.java.jinterval</groupId>
             <artifactId>jinterval-interval-java</artifactId>
-            <version>0.1-SNAPSHOT</version>
-        </dependency-->
+        </dependency>
     </dependencies>
 
     <scm>
-        <connection>scm:git:https://github.com/nadezhin/thermocompensation/thermocompensation-model</connection>
+        <connection>scm:git:https://github.com/nadezhin/thermocompensation</connection>
         <developerConnection>scm:git:https://github.com/nadezhin/thermocompensation</developerConnection>
-        <url>https://github.com/nadezhin/thermocompensation/thermocompensation-model</url>
+        <url>https://github.com/nadezhin/thermocompensation/java/model</url>
     </scm>
 </project>
