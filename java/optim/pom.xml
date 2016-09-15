@@ -40,6 +40,28 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <executable>java</executable>
+                    <workingDirectory>../../example</workingDirectory>
+                    <arguments>
+                        <argument>-ea</argument>
+                        <argument>-Djna.library.path=../lib</argument>
+                        <argument>-classpath</argument>
+                        <classpath/>
+                        <argument>ru.nsc.interval.thermocompensation.optim.ChipPoints</argument>
+                        <argument>P.csv</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <scm>
         <connection>scm:git:https://github.com/nadezhin/thermocompensation</connection>
         <developerConnection>scm:git:https://github.com/nadezhin/thermocompensation</developerConnection>

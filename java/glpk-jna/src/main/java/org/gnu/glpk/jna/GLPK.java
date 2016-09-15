@@ -295,9 +295,9 @@ public class GLPK implements GlpkConsts {
         @Override
         protected List getFieldOrder() {
             return Arrays.asList(
-                    "msg_lev", "or_tech", "bt_tech", "tol_int", "tol_obj",
+                    "msg_lev", "br_tech", "bt_tech", "tol_int", "tol_obj",
                     "tm_lim", "out_frq", "out_dly", "cb_func", "cb_info",
-                    "cb_size", "pp_tech", "mip_gap", "mir_cuts", "gmi_cus",
+                    "cb_size", "pp_tech", "mip_gap", "mir_cuts", "gmi_cuts",
                     "cov_cuts", "clq_cuts", "presolve", "binarize", "fp_heur",
                     "alien", "foo_bar");
         }
