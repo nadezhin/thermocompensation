@@ -7,28 +7,24 @@
         <version>0.1-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
-    <artifactId>model</artifactId>
+    <artifactId>glpk-jna</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>model</name>
+    <name>glpk-jna</name>
     <description>
-        Model of the thermocompensation device.
+        JNA wrapper of GLPK.
     </description>
 
     <dependencies>
         <dependency>
-            <groupId>net.java.jinterval</groupId>
-            <artifactId>jinterval-interval-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-math3</artifactId>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
         </dependency>
     </dependencies>
 
     <scm>
         <connection>scm:git:https://github.com/nadezhin/thermocompensation</connection>
         <developerConnection>scm:git:https://github.com/nadezhin/thermocompensation</developerConnection>
-        <url>https://github.com/nadezhin/thermocompensation/java/model</url>
+        <url>https://github.com/nadezhin/thermocompensation/java/glpk-jna</url>
     </scm>
 </project>

@@ -13,7 +13,7 @@
     <artifactId>parent</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>parent</name>
+    <name>thermocompensation</name>
     <description>
         Aggregator of Thermocompensation.
     </description>
@@ -21,8 +21,10 @@
 
     <modules>
         <module>model</module>
+        <module>glpk-jna</module>
+        <module>optim</module>
     </modules>
-    
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -31,7 +33,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -40,13 +42,23 @@
                 <version>0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
+                <groupId>org.gnu.glpk</groupId>
+                <artifactId>glpk-java</artifactId>
+                <version>1.7.0</version>
+            </dependency>
+            <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
                 <version>4.2.2</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>3.6.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -60,7 +72,16 @@
             </plugin>
         </plugins>
     </build>
-    
+
+    <repositories>
+        <repository>
+            <id>XypronRelease</id>
+            <name>Xypron Release</name>
+            <url>https://www.xypron.de/repository</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+
     <scm>
         <connection>scm:git:https://github.com/nadezhin/thermocompensation</connection>
         <developerConnection>scm:git:https://github.com/nadezhin/thermocompensation</developerConnection>
