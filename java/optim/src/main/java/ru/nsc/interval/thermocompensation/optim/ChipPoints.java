@@ -15,12 +15,12 @@ import java.util.List;
  */
 public class ChipPoints implements ChipModel {
 
-    private static class Meas {
+    public static class Meas {
 
-        final int chipNo;
-        final int adcOut;
-        final int dacInp;
-        final double f;
+        public final int chipNo;
+        public final int adcOut;
+        public final int dacInp;
+        public final double f;
 
         Meas(int chipNo, int adcOut, int dacInp, double f) {
             this.chipNo = chipNo;
@@ -87,7 +87,11 @@ public class ChipPoints implements ChipModel {
         return result;
     }
 
-    private static ChipPoints[] readChipPoints(File file) throws IOException {
+    public Meas[] getMeasures() {
+        return meas.clone();
+    }
+
+    public static ChipPoints[] readChipPoints(File file) throws IOException {
         BitSet chips = new BitSet();
         List<Meas> allMeas = new ArrayList<>();
         try (LineNumberReader in = new LineNumberReader(new InputStreamReader(new FileInputStream(file)))) {

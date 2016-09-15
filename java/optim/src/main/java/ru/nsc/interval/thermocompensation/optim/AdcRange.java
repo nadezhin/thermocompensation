@@ -2,10 +2,10 @@ package ru.nsc.interval.thermocompensation.optim;
 
 public class AdcRange {
 
-    public int minAdcOut;
-    public int maxAdcOut;
+    public final int minAdcOut;
+    public final int maxAdcOut;
 
-    AdcRange(int minAdcOut, int maxAdcOut) {
+    public AdcRange(int minAdcOut, int maxAdcOut) {
         if (!(0 <= minAdcOut && minAdcOut <= maxAdcOut && maxAdcOut <= 4095)) {
             throw new IllegalArgumentException();
         }

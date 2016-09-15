@@ -23,6 +23,7 @@
         <module>model</module>
         <module>glpk-jna</module>
         <module>optim</module>
+	<module>intopt</module>
     </modules>
 
     <dependencies>
