@@ -1,4 +1,4 @@
-package ru.nsc.interval;
+package ru.nsc.interval.thermocompensation.intopt;
 
 import net.java.jinterval.expression.CodeList;
 import net.java.jinterval.expression.Expression;
