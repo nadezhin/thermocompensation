@@ -49,7 +49,7 @@
                         <argument>-ea</argument>
                         <argument>-classpath</argument>
                         <classpath/>
-                        <argument>ru.nsc.interval.thermocompensation.intopt.ShowResults</argument>
+                        <argument>ru.nsc.interval.thermocompensation.intopt.Application</argument>
                         <argument>P.csv</argument>
                     </arguments>
                 </configuration>

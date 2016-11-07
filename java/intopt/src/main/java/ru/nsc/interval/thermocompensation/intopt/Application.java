@@ -91,7 +91,8 @@ public class Application {
 
         int maxHeuristic = 0;
         int maxInterval = 0;
-        SetInterval functionErrBounds = SetIntervalOps.empty();
+        ExtendedRational maxIdeal = Rational.zero();
+        SetInterval diffBounds = SetIntervalOps.empty();
         for (Meas meas : measures) {
             int adcOut = meas.adcOut;
             int required = meas.dacInp;
@@ -99,31 +100,35 @@ public class Application {
             args[result.length] = Rational.valueOf(adcOut);
             int heuristicResult = PolyModel.compute(heuristicInp);
             int intervalResult = PolyModel.compute(intervalInp);
-            ExtendedRational functionResult = ExtendedRationalContexts.evaluateRational(
+            ExtendedRational idealResult = ExtendedRationalContexts.evaluateRational(
                     ExtendedRationalContexts.exact(),
                     expr.getCodeList(),
                     args,
                     expr)[0];
-            functionResult
-                    = ExtendedRationalOps.min(ExtendedRationalOps.max(functionResult, minU), maxU);
+            idealResult
+                    = ExtendedRationalOps.min(ExtendedRationalOps.max(idealResult, minU), maxU);
             int heuristicErr = heuristicResult - required;
             int intervalErr = intervalResult - required;
-            ExtendedRational functionErr = ExtendedRationalOps.sub(functionResult, Rational.valueOf(intervalResult));
+            ExtendedRational idealErr = ExtendedRationalOps.sub(idealResult, Rational.valueOf(required));
+            ExtendedRational diff = ExtendedRationalOps.sub(idealResult, Rational.valueOf(intervalResult));
             maxHeuristic = Math.max(maxHeuristic, Math.abs(heuristicErr));
             maxInterval = Math.max(maxInterval, Math.abs(intervalErr));
-            functionErrBounds = SetIntervalOps.convexHull(functionErrBounds, SetIntervalOps.nums2(functionErr, functionErr));
+            maxIdeal = ExtendedRationalOps.max(maxIdeal, ExtendedRationalOps.abs(idealErr));
+            diffBounds = SetIntervalOps.convexHull(diffBounds, SetIntervalOps.nums2(diff, diff));
             if (print) {
                 System.out.println("  temp=" + adcOut
                         + "\trequired=" + required
                         + "\theuristic=" + heuristicResult + "(" + heuristicErr + ")"
                         + " \tinterval=" + intervalResult + "(" + intervalErr + ")"
-                        + "\tfunction=" + functionResult.doubleValue() + "(" + functionErr.doubleValue() + ")");
+                        + "\tideal=" + idealResult.doubleValue() + "(" + idealErr.doubleValue() + ")"
+                        + "\tdiff=" + diff.doubleValue());
             }
         }
         System.out.println("Chip " + (chipNo + 1));
         System.out.println("heuristic: " + heuristicInp.toLongNom() + "\t" + maxHeuristic);
         System.out.println("interval:  " + intervalInp.toLongNom() + "\t" + maxInterval);
-        System.out.println("functionErrBounds:  [" + functionErrBounds.doubleInf() + "," + functionErrBounds.doubleSup() + "]");
+        System.out.println("ideal:     " + intervalInp.toLongNom() + "\t" + maxIdeal.doubleValue());
+        System.out.println("diffBounds: [" + diffBounds.doubleInf() + "," + diffBounds.doubleSup() + "]");
         System.out.println("-------");
     }
 
