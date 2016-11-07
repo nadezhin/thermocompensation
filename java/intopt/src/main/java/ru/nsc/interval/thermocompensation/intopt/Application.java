@@ -10,6 +10,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
+import net.java.jinterval.expression.Expression;
+import net.java.jinterval.interval.set.SetIntervalOps;
+import net.java.jinterval.rational.ExtendedRational;
+import net.java.jinterval.rational.ExtendedRationalContexts;
+import net.java.jinterval.rational.ExtendedRationalOps;
+import net.java.jinterval.rational.Rational;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps.ExtendedInp;
 import ru.nsc.interval.thermocompensation.model.PolyModel;
@@ -20,6 +26,8 @@ import ru.nsc.interval.thermocompensation.optim.Meas;
 public class Application {
 
     static SetIntervalContext ic = SetIntervalContexts.getPlain();
+    static Rational minU = Rational.valueOf(0);
+    static Rational maxU = Rational.valueOf(4095);
 
     private static void checkChip(ChipPoints chipPoints) throws IOException {
         int chipNo = 0;
@@ -39,7 +47,7 @@ public class Application {
         }
     }
 
-    private static void doChip(int chipNo, ChipPoints[] data, List<List<ExtendedInp>> results) {
+    private static void doChip(int chipNo, ChipPoints[] data, List<List<ExtendedInp>> results, boolean print) {
         ChipPoints chipPoints = data[chipNo];
         Meas[] measures = chipPoints.getMeasures();
         PolyState.Inp heuristicInp = results.get(chipNo).get(0).inp;
@@ -74,28 +82,49 @@ public class Application {
         intervalInp.K3BIT = result[4];
         intervalInp.K4BIT = result[5];
         intervalInp.K5BIT = result[6];
+        ExtendedRational[] args = new ExtendedRational[result.length + 1];
+        for (int i = 0; i < result.length; i++) {
+            args[i] = Rational.valueOf(result[i]);
+        }
+
+        Expression expr = Functions.getObjective();
 
         int maxHeuristic = 0;
         int maxInterval = 0;
+        SetInterval functionErrBounds = SetIntervalOps.empty();
         for (Meas meas : measures) {
             int adcOut = meas.adcOut;
             int required = meas.dacInp;
             heuristicInp.T = intervalInp.T = adcOut;
+            args[result.length] = Rational.valueOf(adcOut);
             int heuristicResult = PolyModel.compute(heuristicInp);
             int intervalResult = PolyModel.compute(intervalInp);
+            ExtendedRational functionResult = ExtendedRationalContexts.evaluateRational(
+                    ExtendedRationalContexts.exact(),
+                    expr.getCodeList(),
+                    args,
+                    expr)[0];
+            functionResult
+                    = ExtendedRationalOps.min(ExtendedRationalOps.max(functionResult, minU), maxU);
             int heuristicErr = heuristicResult - required;
             int intervalErr = intervalResult - required;
+            ExtendedRational functionErr = ExtendedRationalOps.sub(functionResult, Rational.valueOf(intervalResult));
             maxHeuristic = Math.max(maxHeuristic, Math.abs(heuristicErr));
             maxInterval = Math.max(maxInterval, Math.abs(intervalErr));
-//            System.out.println("  temp=" + adcOut
-//                    + "\trequired=" + required
-//                    + "\theuristic=" + heuristicResult + "(" + heuristicErr + ")"
-//                    + "\tinterval=" + intervalResult + "(" + intervalErr + ")");
+            functionErrBounds = SetIntervalOps.convexHull(functionErrBounds, SetIntervalOps.nums2(functionErr, functionErr));
+            if (print) {
+                System.out.println("  temp=" + adcOut
+                        + "\trequired=" + required
+                        + "\theuristic=" + heuristicResult + "(" + heuristicErr + ")"
+                        + " \tinterval=" + intervalResult + "(" + intervalErr + ")"
+                        + "\tfunction=" + functionResult.doubleValue() + "(" + functionErr.doubleValue() + ")");
+            }
         }
         System.out.println("Chip " + (chipNo + 1));
         System.out.println("heuristic: " + heuristicInp.toLongNom() + "\t" + maxHeuristic);
         System.out.println("interval:  " + intervalInp.toLongNom() + "\t" + maxInterval);
-
+        System.out.println("functionErrBounds:  [" + functionErrBounds.doubleInf() + "," + functionErrBounds.doubleSup() + "]");
+        System.out.println("-------");
     }
 
     public static void main(String[] args) throws IOException {
@@ -103,12 +132,15 @@ public class Application {
         ChipPoints[] data = ChipPoints.readChipPoints(new File(name + ".csv"));
         List<List<ExtendedInp>> results = ParseTestInps.parseLogExtendedInps(Paths.get(name + ".opt"));
         checkChip(data[0]);
-        for (int chipNo = 0; chipNo < data.length; chipNo++) {
-            if (chipNo >= data.length || data[chipNo] == null || chipNo >= results.size()) {
-                continue;
+        if (false) {
+            doChip(3, data, results, true);
+        } else {
+            for (int chipNo = 0; chipNo < data.length; chipNo++) {
+                if (chipNo >= data.length || data[chipNo] == null || chipNo >= results.size()) {
+                    continue;
+                }
+                doChip(chipNo, data, results, true);
             }
-            doChip(chipNo, data, results);
-            // break; uncomment to optimize chip 0 only
         }
     }
 }
