@@ -1,4 +1,4 @@
-package ru.nsc.interval;
+package ru.nsc.interval.thermocompensation.intopt;
 
 import net.java.jinterval.interval.set.SetInterval;
 import net.java.jinterval.interval.set.SetIntervalContext;

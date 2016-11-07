@@ -15,21 +15,6 @@ import java.util.List;
  */
 public class ChipPoints implements ChipModel {
 
-    public static class Meas {
-
-        public final int chipNo;
-        public final int adcOut;
-        public final int dacInp;
-        public final double f;
-
-        Meas(int chipNo, int adcOut, int dacInp, double f) {
-            this.chipNo = chipNo;
-            this.adcOut = adcOut;
-            this.dacInp = dacInp;
-            this.f = f;
-        }
-    }
-
     final int chipNo;
     final Meas[] meas;
     final double f;
