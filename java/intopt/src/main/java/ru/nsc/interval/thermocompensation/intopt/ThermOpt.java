@@ -23,10 +23,10 @@ public class ThermOpt {
         this.eps = eps;
         this.ic = ic;
         setEv = SetIntervalEvaluator.create(ic, Functions.getList(), Functions.getObjective());
-        optimizationStep(initialBox);
+        resultHolder.add(optimizationStep(initialBox));
     }
 
-    private final void optimizationStep(SetInterval[] box) {
+    private final ResultHolderElement optimizationStep(SetInterval[] box) {
         double differenceBtwU;
         double maxDifferenceMag = 0;
         double maxDifferenceMig = 0;
@@ -62,10 +62,10 @@ public class ThermOpt {
             }
             maxDifferenceMig = Math.max(differenceBtwU, maxDifferenceMig);
         }
-        resultHolder.add(new ResultHolderElement(box, maxDifferenceMig, maxDifferenceMag));
+        return new ResultHolderElement(box, maxDifferenceMig, maxDifferenceMag);
     }
 
-    private SetInterval intervalToPointFlooring(SetInterval intval) {
+    /*private SetInterval intervalToPointFlooring(SetInterval intval) {
         if (Math.floor(intval.doubleInf()) == Math.floor(intval.doubleSup())) {
             if (intval.doubleInf() != Math.floor(intval.doubleInf())) {
                 return null;
@@ -75,14 +75,15 @@ public class ThermOpt {
         } else {
             return ic.numsToInterval(Math.floor(intval.doubleSup()), Math.floor(intval.doubleSup()));
         }
-    }
+    }*/
 
     public int[] startOptimization() {
-        int[] result = null;
+        int[] result = new int[initialBox.length];
         int numbOfWidest;
         double maxWidth;
         SetInterval[] currentBox;
-        while ((resultHolder.peek().getMaxDifferenceBtwU() - resultHolder.peek().getMinDifferenceBtwU()) > eps) {
+        double supOfGlobalOptimum = Double.POSITIVE_INFINITY;
+        while ((supOfGlobalOptimum - resultHolder.peek().getMinDifferenceBtwU()) > eps) {
 //            System.out.println(resultHolder.peek().getMinDifferenceBtwU());
             currentBox = resultHolder.poll().getRecordBox();
             numbOfWidest = 0;
@@ -94,10 +95,31 @@ public class ThermOpt {
                 }
             }
             SetInterval[] firstBox = currentBox.clone();
+            int intvalInf = (int) Math.ceil(firstBox[numbOfWidest].doubleInf());
+            int intvalSup = (int) Math.floor(firstBox[numbOfWidest].doubleMid());
+            if (intvalInf <= intvalSup) {
+                firstBox[numbOfWidest] = ic.numsToInterval(intvalInf, intvalSup);
+                resultHolder.add(optimizationStep(firstBox));
+            }
             SetInterval[] secondBox = currentBox.clone();
-            firstBox[numbOfWidest] = ic.numsToInterval(firstBox[numbOfWidest].inf(), firstBox[numbOfWidest].mid());
-            secondBox[numbOfWidest] = ic.numsToInterval(secondBox[numbOfWidest].mid(), secondBox[numbOfWidest].sup());
-            if (maxWidth < 2) {
+            intvalInf = (int) Math.ceil(secondBox[numbOfWidest].doubleMid());
+            intvalSup = (int) Math.floor(secondBox[numbOfWidest].doubleSup());
+            if (intvalInf <= intvalSup) {
+                secondBox[numbOfWidest] = ic.numsToInterval(intvalInf, intvalSup);
+                resultHolder.add(optimizationStep(secondBox));
+            }
+            SetInterval[] midBox = currentBox.clone();
+            for (int i = 0; i < midBox.length; i++) {
+                midBox[i] = ic.numsToInterval(Math.floor(midBox[i].doubleMid()), Math.floor(midBox[i].doubleMid()));
+            }
+            double currentSupOfGlobalOptimum = optimizationStep(midBox).getMinDifferenceBtwU();
+            if (currentSupOfGlobalOptimum < supOfGlobalOptimum) {
+                supOfGlobalOptimum = currentSupOfGlobalOptimum;
+                for (int i = 0; i < result.length; i++) {
+                    result[i] = (int) midBox[i].doubleInf();
+                }
+            }
+            /*if (maxWidth < 2) {
                 firstBox[numbOfWidest] = intervalToPointFlooring(firstBox[numbOfWidest]);
                 secondBox[numbOfWidest] = intervalToPointFlooring(secondBox[numbOfWidest]);
                 if (firstBox[numbOfWidest] != null) {
@@ -107,22 +129,18 @@ public class ThermOpt {
                     optimizationStep(secondBox);
                 }
                 continue;
-            }
-            optimizationStep(firstBox);
-            optimizationStep(secondBox);
+            }*/
         }
-        result = new int[resultHolder.peek().getRecordBox().length];
         for (int i = 0; i < result.length; i++) {
-            result[i] = (int) resultHolder.peek().getRecordBox()[i].doubleInf();
             System.out.print(result[i] + " ");
         }
         System.out.print("min " + resultHolder.peek().getMinDifferenceBtwU());
-        System.out.println(" max " + resultHolder.poll().getMaxDifferenceBtwU());
-        for (int i = 0; i < result.length; i++) {
+        System.out.println(" max " + supOfGlobalOptimum);
+        /*for (int i = 0; i < result.length; i++) {
             System.out.print("[" + resultHolder.peek().getRecordBox()[i].doubleInf() + ", " + resultHolder.peek().getRecordBox()[i].doubleSup() + "] ");
         }
         System.out.print("min " + resultHolder.peek().getMinDifferenceBtwU());
-        System.out.println(" max " + resultHolder.poll().getMaxDifferenceBtwU());
+        System.out.println(" max " + resultHolder.poll().getMaxDifferenceBtwU());*/
         return result;
     }
 }

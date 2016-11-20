@@ -137,7 +137,7 @@ public class Application {
         ChipPoints[] data = ChipPoints.readChipPoints(new File(name + ".csv"));
         List<List<ExtendedInp>> results = ParseTestInps.parseLogExtendedInps(Paths.get(name + ".opt"));
         checkChip(data[0]);
-        if (false) {
+        if (true) {
             doChip(3, data, results, true);
         } else {
             for (int chipNo = 0; chipNo < data.length; chipNo++) {
