@@ -4,7 +4,7 @@ import net.java.jinterval.expression.CodeList;
 import net.java.jinterval.expression.Expression;
 
 public class Functions {
-    private static String[] inputs = new String[]{"INFBIT", "SBIT", "K1BIT", "K2BIT", "K3BIT", "K4BIT", "K5BIT", "T"};
+    private static final String[] inputs = new String[]{"INFBIT", "SBIT", "K1BIT", "K2BIT", "K3BIT", "K4BIT", "K5BIT", "T"};
     private static final CodeList list = CodeList.create(inputs);
     private static final Expression[] expr;
     private static final Expression objectiveFunction;
