@@ -4,9 +4,7 @@ import net.java.jinterval.interval.set.SetInterval;
 import net.java.jinterval.interval.set.SetIntervalContext;
 import net.java.jinterval.interval.set.SetIntervalContexts;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
@@ -28,24 +26,6 @@ public class Application {
     static SetIntervalContext ic = SetIntervalContexts.getPlain();
     static Rational minU = Rational.valueOf(0);
     static Rational maxU = Rational.valueOf(4095);
-
-    private static void checkChip(ChipPoints chipPoints) throws IOException {
-        int chipNo = 0;
-        Meas[] measures = chipPoints.getMeasures();
-        try (BufferedReader fileReader = new BufferedReader(new FileReader("../java/intopt/input.txt"))) {
-            double[] temp = new double[13];
-            double[] u = new double[13];
-            for (int i = 0; i < 13; i++) {
-                String[] tmp = fileReader.readLine().split(";");
-                temp[i] = Double.parseDouble(tmp[0]);
-                u[i] = Double.parseDouble(tmp[1]);
-                Meas meas = measures[i];
-                assert meas.chipNo == chipNo;
-                assert meas.adcOut == temp[i];
-                assert meas.dacInp == u[i];
-            }
-        }
-    }
 
     private static void doChip(int chipNo, ChipPoints[] data, List<List<ExtendedInp>> results, boolean print) {
         ChipPoints chipPoints = data[chipNo];
@@ -136,7 +116,6 @@ public class Application {
         String name = "P";
         ChipPoints[] data = ChipPoints.readChipPoints(new File(name + ".csv"));
         List<List<ExtendedInp>> results = ParseTestInps.parseLogExtendedInps(Paths.get(name + ".opt"));
-        checkChip(data[0]);
         if (true) {
             doChip(3, data, results, true);
         } else {
