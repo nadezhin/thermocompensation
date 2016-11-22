@@ -36,6 +36,7 @@ public class ThermOpt {
             System.arraycopy(box, 0, boxAndTmp, 0, box.length);
             boxAndTmp[box.length] = ic.numsToInterval(temp[i], temp[i]);
             uIntval = setEv.evaluate(boxAndTmp)[0];
+            /*
             if (uIntval.doubleInf() > 4095) {
                 uIntval = ic.numsToInterval(4095, 4095);
             } else {
@@ -50,6 +51,7 @@ public class ThermOpt {
                     uIntval = ic.numsToInterval(0, uIntval.doubleSup());
                 }
             }
+            */
             uIntval = ic.sub(uIntval, ic.numsToInterval(u[i], u[i]));
             if (ic.intersection(uIntval, ic.numsToInterval(0, 0)).isEmpty()) {
                 differenceBtwU = Math.min(Math.abs(uIntval.doubleInf()), Math.abs(uIntval.doubleSup()));
@@ -64,18 +66,6 @@ public class ThermOpt {
         }
         return new ResultHolderElement(box, maxDifferenceMig, maxDifferenceMag);
     }
-
-    /*private SetInterval intervalToPointFlooring(SetInterval intval) {
-        if (Math.floor(intval.doubleInf()) == Math.floor(intval.doubleSup())) {
-            if (intval.doubleInf() != Math.floor(intval.doubleInf())) {
-                return null;
-            } else {
-                return ic.numsToInterval(intval.inf(), intval.inf());
-            }
-        } else {
-            return ic.numsToInterval(Math.floor(intval.doubleSup()), Math.floor(intval.doubleSup()));
-        }
-    }*/
 
     public int[] startOptimization() {
         int[] result = new int[initialBox.length];
@@ -119,17 +109,6 @@ public class ThermOpt {
                     result[i] = (int) midBox[i].doubleInf();
                 }
             }
-            /*if (maxWidth < 2) {
-                firstBox[numbOfWidest] = intervalToPointFlooring(firstBox[numbOfWidest]);
-                secondBox[numbOfWidest] = intervalToPointFlooring(secondBox[numbOfWidest]);
-                if (firstBox[numbOfWidest] != null) {
-                    optimizationStep(firstBox);
-                }
-                if (secondBox[numbOfWidest] != null) {
-                    optimizationStep(secondBox);
-                }
-                continue;
-            }*/
         }
         for (int i = 0; i < result.length; i++) {
             System.out.print(result[i] + " ");
