@@ -111,6 +111,10 @@ public class PolyModel {
             this.p1 = p1;
             this.p2 = p2;
         }
+
+        int getP() {
+            return p1 + p2;
+        }
     }
 
     /**
@@ -286,6 +290,72 @@ public class PolyModel {
         s0.posedge(inp, s1, fixBugP);
         resultOut = (res6 < 0 ? 0 : res6 >= (1L << 12) ? 4095 : (int) res6);
         assert s0.RESULTout == resultOut;
+    }
+
+    /**
+     * Behavior model of the polynomial evaluator.
+     *
+     * @param inp input with coefficients and temperature
+     * @param fixBugP fix the bug
+     * @return result of computation
+     *
+     */
+    public static PolyModel computePolyModel(PolyState.Inp inp, boolean fixBugP) {
+        return new PolyModel(inp, fixBugP);
+    }
+
+    /**
+     * Return P0 garbage carryout.
+     *
+     * @return P0
+     */
+    public int getP0() {
+        return fixBugP ? 0 : prinf.getP();
+    }
+
+    /**
+     * Return P1 garbage carryout.
+     *
+     * @return P1
+     */
+    public int getP1() {
+        return fixBugP ? 0 : prs.getP();
+    }
+
+    /**
+     * Return P2 garbage carryout.
+     *
+     * @return P2
+     */
+    public int getP2() {
+        return fixBugP ? 0 : pr4.getP();
+    }
+
+    /**
+     * Return P3 garbage carryout.
+     *
+     * @return P3
+     */
+    public int getP3() {
+        return fixBugP ? 0 : pr3.getP();
+    }
+
+    /**
+     * Return P4 garbage carryout.
+     *
+     * @return P4
+     */
+    public int getP4() {
+        return fixBugP ? 0 : pr2.getP();
+    }
+
+    /**
+     * Return P5 garbage carryout.
+     *
+     * @return P5
+     */
+    public int getP5() {
+        return fixBugP ? 0 : pr1.getP();
     }
 
     /**
@@ -786,7 +856,7 @@ public class PolyModel {
         int resultOut = (res6 < 0 ? 0 : res6 >= (1L << 12) ? 4095 : (int) res6);
         if (check) {
             inp.ENwork = 1;
-            PolyModel pm = new PolyModel(inp, fixBugP);
+            PolyModel pm = computePolyModel(inp, fixBugP);
             assert pm.prs.result == prs.result;
             assert pm.prs.p1 == prs.p1;
             assert pm.prs.p2 == prs.p2;
