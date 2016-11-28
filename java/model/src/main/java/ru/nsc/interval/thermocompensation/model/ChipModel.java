@@ -1,4 +1,4 @@
-package ru.nsc.interval.thermocompensation.optim;
+package ru.nsc.interval.thermocompensation.model;
 
 /**
  *
@@ -10,6 +10,8 @@ public interface ChipModel {
     public double getUpperModelFfromAdcOut(double cc, double cf, double dacInp, int adcOut);
 
     public int[] getAdcOuts();
+
+    public double getF0();
 
     public static final double CF2CC = 0.034;
 }

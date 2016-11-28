@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import org.gnu.glpk.jna.GLPK;
+import ru.nsc.interval.thermocompensation.model.AdcRange;
+import ru.nsc.interval.thermocompensation.model.ChipModel;
 import ru.nsc.interval.thermocompensation.model.PolyState;
 import ru.nsc.interval.thermocompensation.model.PolyModel;
 
