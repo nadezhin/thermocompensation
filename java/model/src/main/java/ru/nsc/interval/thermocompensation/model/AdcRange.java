@@ -1,4 +1,4 @@
-package ru.nsc.interval.thermocompensation.optim;
+package ru.nsc.interval.thermocompensation.model;
 
 public class AdcRange {
 

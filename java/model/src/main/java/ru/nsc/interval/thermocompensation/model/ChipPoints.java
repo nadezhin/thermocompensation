@@ -1,11 +1,10 @@
-package ru.nsc.interval.thermocompensation.optim;
+package ru.nsc.interval.thermocompensation.model;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -17,7 +16,7 @@ public class ChipPoints implements ChipModel {
 
     final int chipNo;
     final Meas[] meas;
-    final double f;
+    final double f0;
 
     private ChipPoints(int chipNo, Meas[] meas) {
         this.chipNo = chipNo;
@@ -26,7 +25,7 @@ public class ChipPoints implements ChipModel {
         for (Meas m : meas) {
             sf += m.f;
         }
-        f = Math.rint(sf / meas.length);
+        f0 = Math.rint(sf / meas.length);
     }
 
     private double getModelFfromAdcOut(double dacInp, int adcOut) {
@@ -35,7 +34,7 @@ public class ChipPoints implements ChipModel {
         for (int i = 0; i < meas.length; i++) {
             Meas m = meas[i];
             if (m.adcOut == adcOut) {
-                return f + (dacInp - m.dacInp);
+                return f0 + (dacInp - m.dacInp);
             }
             if (m.adcOut < adcOut && (mMin == null || mMin.adcOut < m.adcOut)) {
                 mMin = m;
@@ -45,12 +44,16 @@ public class ChipPoints implements ChipModel {
             }
         }
         if (mMax == null) {
-            return f + (dacInp - mMin.dacInp);
+            return f0 + (dacInp - mMin.dacInp);
         }
         if (mMin == null) {
-            return f + (dacInp - mMax.dacInp);
+            return f0 + (dacInp - mMax.dacInp);
         }
-        return f + (dacInp - (mMin.dacInp * (mMax.adcOut - adcOut) + mMax.dacInp * (adcOut - mMin.adcOut)) / (double) (mMax.adcOut - mMin.adcOut));
+        return f0 + (dacInp - (mMin.dacInp * (mMax.adcOut - adcOut) + mMax.dacInp * (adcOut - mMin.adcOut)) / (double) (mMax.adcOut - mMin.adcOut));
+    }
+
+    public double getF0() {
+        return f0;
     }
 
     @Override
@@ -72,6 +75,7 @@ public class ChipPoints implements ChipModel {
         return result;
     }
 
+    @Deprecated
     public Meas[] getMeasures() {
         return meas.clone();
     }
@@ -79,6 +83,7 @@ public class ChipPoints implements ChipModel {
     public static ChipPoints[] readChipPoints(File file) throws IOException {
         BitSet chips = new BitSet();
         List<Meas> allMeas = new ArrayList<>();
+        final double DF_DU = 1;
         try (LineNumberReader in = new LineNumberReader(new InputStreamReader(new FileInputStream(file)))) {
             String line;
             while ((line = in.readLine()) != null) {
@@ -94,7 +99,7 @@ public class ChipPoints implements ChipModel {
                 double f = Double.parseDouble(pieces[3].replace(',', '.'));
 //                assert pieces[4].isEmpty();
                 chips.set(chipNo);
-                allMeas.add(new Meas(chipNo, adcOut, dacInp, f));
+                allMeas.add(new Meas(chipNo, adcOut, dacInp, f, DF_DU));
             }
         }
         ChipPoints[] result = new ChipPoints[64];
@@ -111,27 +116,5 @@ public class ChipPoints implements ChipModel {
             result[chipNo] = new ChipPoints(chipNo, myMeas.toArray(new Meas[myMeas.size()]));
         }
         return result;
-    }
-
-    public static void main(String[] args) throws IOException {
-        int cc = 0;
-        int cf = 0;
-        AdcRange adcRange = new AdcRange(0, 4095);
-        ChipPoints[] chips = readChipPoints(new File(args[0]));
-        Optim.Record[] records = new Optim.Record[chips.length];
-        PrintWriter out = new PrintWriter(System.out, true);
-        for (int chipNo = 0; chipNo < chips.length; chipNo++) {
-            ChipPoints chip = chips[chipNo];
-            if (chip == null) {
-                continue;
-            }
-            records[chipNo] = Optim.optimF(out, chip, cc, cf, adcRange, chip.f);
-        }
-        out.flush();
-        for (int chipNo = 0; chipNo < chips.length; chipNo++) {
-            if (records[chipNo] != null) {
-                System.out.println((chipNo + 1) + ": " + records[chipNo]);
-            }
-        }
     }
 }

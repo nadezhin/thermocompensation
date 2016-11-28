@@ -19,23 +19,34 @@ import ru.nsc.interval.thermocompensation.model.ParseTestInps.ExtendedInp;
 import ru.nsc.interval.thermocompensation.model.PolyModel;
 import ru.nsc.interval.thermocompensation.model.PolyState;
 import ru.nsc.interval.thermocompensation.model.ChipPoints;
-import ru.nsc.interval.thermocompensation.model.Meas;
 
-public class Application {
+public class Application2 {
 
     static SetIntervalContext ic = SetIntervalContexts.getPlain();
 
     private static void doChip(int chipNo, ChipPoints[] data, List<List<ExtendedInp>> results, boolean print) {
         ChipPoints chipPoints = data[chipNo];
-        Meas[] measures = chipPoints.getMeasures();
+        double f0 = chipPoints.getF0();
+        int cc = 0;
+        int cf = 0;
+        int[] adcOuts = chipPoints.getAdcOuts();
         PolyState.Inp heuristicInp = results.get(chipNo).get(0).inp;
-        double[] temp = new double[13];
-        double[] u = new double[13];
-        for (int i = 0; i < 13; i++) {
-            Meas meas = measures[i];
-            assert meas.chipNo == chipNo;
-            temp[i] = meas.adcOut;
-            u[i] = meas.dacInp;
+        double[] temp = new double[adcOuts.length];
+        double[] u = new double[adcOuts.length];
+        for (int i = 0; i < adcOuts.length; i++) {
+            int adcOut = adcOuts[i];
+            temp[i] = adcOut;
+            for (int dacInp = 0; dacInp < 4096; dacInp++) {
+                double inf = chipPoints.getLowerModelFfromAdcOut(cc, cf, dacInp, adcOut);
+                double sup = chipPoints.getUpperModelFfromAdcOut(cc, cf, dacInp, adcOut);
+                assert inf == sup;
+                if (inf == f0) {
+                    u[i] = dacInp;
+                }
+                if (sup == f0) {
+                    u[i] = dacInp;
+                }
+            }
         }
 
         SetInterval INFBIT = ic.numsToInterval(0, 63);
@@ -67,43 +78,47 @@ public class Application {
 
         Expression expr = Functions.getObjective();
 
-        int maxHeuristic = 0;
-        int maxInterval = 0;
-        ExtendedRational maxIdeal = Rational.zero();
+        double maxHeuristic = 0;
+        double maxInterval = 0;
+        double maxIdeal = 0;
         SetInterval diffBounds = SetIntervalOps.empty();
-        for (Meas meas : measures) {
-            int adcOut = meas.adcOut;
-            int required = meas.dacInp;
+        for (int adcOut: adcOuts) {
+//            int required = meas.dacInp;
             heuristicInp.T = intervalInp.T = adcOut;
             args[result.length] = Rational.valueOf(adcOut);
-            int heuristicResult = PolyModel.compute(heuristicInp);
-            int intervalResult = PolyModel.compute(intervalInp);
-            ExtendedRational idealResult = ExtendedRationalContexts.evaluateRational(
+            int heuristicDacOut = PolyModel.compute(heuristicInp);
+            double heuristicFInf = chipPoints.getLowerModelFfromAdcOut(cc, cf, heuristicDacOut, adcOut);
+            double heuristicFSup = chipPoints.getUpperModelFfromAdcOut(cc, cf, heuristicDacOut, adcOut);
+            int intervalDacOut = PolyModel.compute(intervalInp);
+            double intervalFInf = chipPoints.getLowerModelFfromAdcOut(cc, cf, intervalDacOut, adcOut);
+            double intervalFSup = chipPoints.getUpperModelFfromAdcOut(cc, cf, intervalDacOut, adcOut);
+            ExtendedRational idealDacOut = ExtendedRationalContexts.evaluateRational(
                     ExtendedRationalContexts.exact(),
                     expr.getCodeList(),
                     args,
                     expr)[0];
-            int heuristicErr = heuristicResult - required;
-            int intervalErr = intervalResult - required;
-            ExtendedRational idealErr = ExtendedRationalOps.sub(idealResult, Rational.valueOf(required));
-            ExtendedRational diff = ExtendedRationalOps.sub(idealResult, Rational.valueOf(intervalResult));
+            double idealFInf = chipPoints.getLowerModelFfromAdcOut(cc, cf, idealDacOut.doubleValue(), adcOut);
+            double idealFSup = chipPoints.getUpperModelFfromAdcOut(cc, cf, idealDacOut.doubleValue(), adcOut);
+            double heuristicErr = Math.max(Math.abs(heuristicFInf - f0), Math.abs(heuristicFSup - f0));
+            double intervalErr = Math.max(Math.abs(intervalFInf - f0), Math.abs(intervalFSup - f0));
+            double idealErr = Math.max(Math.abs(idealFInf - f0), Math.abs(idealFSup - f0));
+            ExtendedRational diff = ExtendedRationalOps.sub(idealDacOut, Rational.valueOf(intervalDacOut));
             maxHeuristic = Math.max(maxHeuristic, Math.abs(heuristicErr));
             maxInterval = Math.max(maxInterval, Math.abs(intervalErr));
-            maxIdeal = ExtendedRationalOps.max(maxIdeal, ExtendedRationalOps.abs(idealErr));
+            maxIdeal = Math.max(maxIdeal, Math.abs(idealErr));
             diffBounds = SetIntervalOps.convexHull(diffBounds, SetIntervalOps.nums2(diff, diff));
             if (print) {
                 System.out.println("  temp=" + adcOut
-                        + "\trequired=" + required
-                        + "\theuristic=" + heuristicResult + "(" + heuristicErr + ")"
-                        + " \tinterval=" + intervalResult + "(" + intervalErr + ")"
-                        + "\tideal=" + idealResult.doubleValue() + "(" + idealErr.doubleValue() + ")"
+                        + "\theuristic=[" + (heuristicFInf - f0) + "," + (heuristicFSup - f0) + "]"
+                        + " \tinterval=[" + (intervalFInf - f0) + "," + (intervalFSup - f0) + "]"
+                        + "\tideal=[" + (idealFInf - f0) + "," + (idealFSup - f0) + ")"
                         + "\tdiff=" + diff.doubleValue());
             }
         }
-        System.out.println("Chip " + (chipNo + 1));
+        System.out.println("Chip " + (chipNo + 1) + " f0=" + f0);
         System.out.println("heuristic: " + heuristicInp.toLongNom() + "\t" + maxHeuristic);
         System.out.println("interval:  " + intervalInp.toLongNom() + "\t" + maxInterval);
-        System.out.println("ideal:     " + intervalInp.toLongNom() + "\t" + maxIdeal.doubleValue());
+        System.out.println("ideal:     " + intervalInp.toLongNom() + "\t" + maxIdeal);
         System.out.println("diffBounds: [" + diffBounds.doubleInf() + "," + diffBounds.doubleSup() + "]");
         System.out.println("-------");
     }
