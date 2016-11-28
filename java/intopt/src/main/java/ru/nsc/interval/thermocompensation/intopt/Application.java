@@ -24,8 +24,6 @@ import ru.nsc.interval.thermocompensation.optim.Meas;
 public class Application {
 
     static SetIntervalContext ic = SetIntervalContexts.getPlain();
-    static Rational minU = Rational.valueOf(0);
-    static Rational maxU = Rational.valueOf(4095);
 
     private static void doChip(int chipNo, ChipPoints[] data, List<List<ExtendedInp>> results, boolean print) {
         ChipPoints chipPoints = data[chipNo];
@@ -85,8 +83,6 @@ public class Application {
                     expr.getCodeList(),
                     args,
                     expr)[0];
-            idealResult
-                    = ExtendedRationalOps.min(ExtendedRationalOps.max(idealResult, minU), maxU);
             int heuristicErr = heuristicResult - required;
             int intervalErr = intervalResult - required;
             ExtendedRational idealErr = ExtendedRationalOps.sub(idealResult, Rational.valueOf(required));
@@ -116,7 +112,7 @@ public class Application {
         String name = "P";
         ChipPoints[] data = ChipPoints.readChipPoints(new File(name + ".csv"));
         List<List<ExtendedInp>> results = ParseTestInps.parseLogExtendedInps(Paths.get(name + ".opt"));
-        if (true) {
+        if (false) {
             doChip(3, data, results, true);
         } else {
             for (int chipNo = 0; chipNo < data.length; chipNo++) {
