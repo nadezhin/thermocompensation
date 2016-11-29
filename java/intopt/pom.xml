@@ -44,13 +44,13 @@
                 <version>1.5.0</version>
                 <configuration>
                     <executable>java</executable>
-                    <workingDirectory>../../example/P</workingDirectory>
+                    <workingDirectory>../../example</workingDirectory>
                     <arguments>
                         <argument>-ea</argument>
                         <argument>-classpath</argument>
                         <classpath/>
                         <argument>ru.nsc.interval.thermocompensation.intopt.Application</argument>
-                        <argument>P.csv</argument>
+                        <argument>P</argument>
                     </arguments>
                 </configuration>
             </plugin>

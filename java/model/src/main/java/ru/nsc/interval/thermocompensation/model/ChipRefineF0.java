@@ -39,8 +39,8 @@ public class ChipRefineF0 extends ChipRefine {
 
     public static ChipModel[] readChips(String prefix, List<List<ExtendedInp>> inpsLists, double f0) throws IOException, ParseException {
         String runTime = "";
-        Path pathT = Paths.get(prefix, "_t.txt");
-        Path pathF = Paths.get(prefix, "_f0.txt");
+        Path pathT = Paths.get(prefix + "_t.txt");
+        Path pathF = Paths.get(prefix + "_f0.txt");
         ParseTemp parseTemp = new ParseTemp(pathT);
         Parse parse = new Parse(pathF.toFile());
 
