@@ -222,7 +222,6 @@ public class IntervalModel {
      */
     public SetInterval[] evalPpm(PolyState.Inp inp) {
         SetInterval[] result = evalDF(inp);
-        double f0 = thermoFreqModel.getF0();
         for (int i = 0; i < result.length; i++) {
             result[i] = ic.mul(result[i], scale);
         }

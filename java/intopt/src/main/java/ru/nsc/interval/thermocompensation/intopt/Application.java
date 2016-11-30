@@ -40,7 +40,7 @@ public class Application {
         Optim.Record record = Optim.optimF(out, chip.thermoFreqModel,
                 chip.getCC(), chip.getCF(), new AdcRange(0, 4095), chip.getF0());
         PolyState.Inp heuristicInp = record.inp;
-        System.out.println(record.inp.toNom() + " +-" + record.bestDiff/record.targetF*1e6);
+        System.out.println(record.inp.toNom() + " +-" + record.bestDiff / record.targetF * 1e6);
         out.close();
         ba.close();
 
@@ -106,7 +106,7 @@ public class Application {
     }
 
     private static void help() {
-        System.out.println("Usage: dir [-sN] [-eD] [-nN] [-g] [-p]");
+        System.out.println("Usage: java -ea -Djna.library.path=../lib -jar intoptXXX.jar dir [-sN] [-eD] [-nN] [-g] [-p]");
         System.out.println("  -sN stage N   - N=1 or N=2");
         System.out.println("  -eD value of eps");
         System.out.println("  -nN only chip N");

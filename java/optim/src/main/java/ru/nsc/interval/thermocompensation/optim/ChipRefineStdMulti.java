@@ -248,7 +248,11 @@ public class ChipRefineStdMulti {
                 }
             }
             System.out.println();
-            optimMultithreaded(prepareTasks(chips, inpsLists, minT, maxT, freq, cc, relDiff));
+            Collection<OptimResult> optimResults = optimMultithreaded(prepareTasks(chips, inpsLists, minT, maxT, freq, cc, relDiff));
+            System.out.println("-------------");
+            for (OptimResult or : optimResults) {
+                System.out.println((or.chipNo + 1) + ": " + or.optimResults.get(0));
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
