@@ -47,6 +47,7 @@
                     <workingDirectory>../../example</workingDirectory>
                     <arguments>
                         <argument>-ea</argument>
+                        <argument>-Djna.library.path=../lib</argument>
                         <argument>-classpath</argument>
                         <classpath/>
                         <argument>ru.nsc.interval.thermocompensation.intopt.Application</argument>

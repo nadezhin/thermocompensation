@@ -1,18 +1,21 @@
 package ru.nsc.interval.thermocompensation.intopt;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import net.java.jinterval.interval.set.SetInterval;
-import net.java.jinterval.interval.set.SetIntervalContext;
-import net.java.jinterval.interval.set.SetIntervalContexts;
-
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import net.java.jinterval.interval.set.SetInterval;
+import net.java.jinterval.interval.set.SetIntervalContext;
+import net.java.jinterval.interval.set.SetIntervalContexts;
+import ru.nsc.interval.thermocompensation.model.AdcRange;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps.ExtendedInp;
 import ru.nsc.interval.thermocompensation.model.PolyState;
+import ru.nsc.interval.thermocompensation.optim.Optim;
 import ru.nsc.interval.thermocompensation.show.ChipShow;
 
 public class Application {
@@ -22,17 +25,29 @@ public class Application {
     static boolean gnuplot = false;
 
     private static void doChip(String plotDirName, IntervalPolyModel ipm, int chipNo,
-            Map<IntervalPolyModel, List<IntervalModel>> models,
-            List<List<ExtendedInp>> results, boolean print) throws IOException, InterruptedException {
+            Map<IntervalPolyModel, List<IntervalModel>> models) throws IOException, InterruptedException {
         IntervalModel chip = models.get(ipm).get(chipNo);
-        PolyState.Inp heuristicInp = results.get(chipNo).get(0).inp;
+        System.out.println("Chip " + (chipNo + 1));
+
+        // Interval optimization
         ThermOpt program = new ThermOpt(chip, eps, ic);
         int[] result = program.startOptimization();
         PolyState.Inp intervalInp = chip.pointAsInp(result);
+
+        // Heuristic optimization
+        ByteArrayOutputStream ba = new ByteArrayOutputStream();
+        PrintWriter out = new PrintWriter(ba);
+        Optim.Record record = Optim.optimF(out, chip.thermoFreqModel,
+                chip.getCC(), chip.getCF(), new AdcRange(0, 4095), chip.getF0());
+        PolyState.Inp heuristicInp = record.inp;
+        System.out.println(record.inp.toNom() + " +-" + record.bestDiff/record.targetF*1e6);
+        out.close();
+        ba.close();
+
+        // Plot and print
         if (gnuplot) {
             showChip(plotDirName, chipNo, models, heuristicInp, intervalInp);
         }
-        System.out.println("Chip " + (chipNo + 1));
         for (IntervalPolyModel m : IntervalPolyModel.values()) {
             System.out.println(m.getAbbrev() + " interval : " + models.get(m).get(chipNo).evalMaxPpm(intervalInp));
         }
@@ -149,25 +164,21 @@ public class Application {
         String plotDir;
         Map<IntervalPolyModel, List<IntervalModel>> allModels;
         List<List<ExtendedInp>> inps;
-        List<List<ExtendedInp>> results;
         switch (stage) {
             case 0:
                 plotDir = dir + "Plot/";
                 allModels = IntervalModel.readCsvModels(dir + "P.csv", ic);
                 inps = null;
-                results = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "P.opt"));
                 break;
             case 1:
                 plotDir = dir + "Plot1/";
                 inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "nom_inps.txt"));
                 allModels = IntervalModel.readTF0Models(dir + "m1", inps, 12000000, ic);
-                results = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
                 break;
             case 2:
                 plotDir = dir + "Plot1/";
                 inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
                 allModels = IntervalModel.readTF0Models(dir + "m2", inps, 12000000, ic);
-                results = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o2.txt"));
                 break;
             default:
                 throw new AssertionError();
@@ -175,13 +186,13 @@ public class Application {
         IntervalPolyModel ipm = IntervalPolyModel.IDEAL;
         List<IntervalModel> models = allModels.get(ipm);
         if (chipNo >= 0) {
-            doChip(plotDir, ipm, chipNo, allModels, results, true);
+            doChip(plotDir, ipm, chipNo, allModels);
         } else {
             for (chipNo = 0; chipNo < models.size(); chipNo++) {
-                if (models.get(chipNo) == null || chipNo >= results.size()) {
+                if (models.get(chipNo) == null) {
                     continue;
                 }
-                doChip(plotDir, ipm, chipNo, allModels, results, true);
+                doChip(plotDir, ipm, chipNo, allModels);
             }
         }
     }

@@ -102,6 +102,33 @@ public class IntervalModel {
     }
 
     /**
+     * Требуемая частота
+     *
+     * @return требуемая частота
+     */
+    public double getF0() {
+        return thermoFreqModel.getF0();
+    }
+
+    /**
+     * Заданный CC
+     *
+     * @return заданный CC
+     */
+    public int getCC() {
+        return CC;
+    }
+
+    /**
+     * Заданный CF
+     *
+     * @return заданный CF
+     */
+    public int getCF() {
+        return CF;
+    }
+
+    /**
      * Convert coefficient vector to Inp
      *
      * @param point coefficient vector
