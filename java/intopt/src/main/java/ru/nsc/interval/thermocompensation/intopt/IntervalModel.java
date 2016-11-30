@@ -28,11 +28,11 @@ public class IntervalModel {
     /**
      * Модель вычислителя.
      */
-    public final IntervalPolyModel polyModel;
+    private final IntervalPolyModel polyModel;
     /**
      * Температурно-частотная модель.
      */
-    public final ChipModel thermoFreqModel;
+    private final ChipModel thermoFreqModel;
     /**
      * Интервальный контекст для промежуточных вычислений.
      */
@@ -72,7 +72,8 @@ public class IntervalModel {
      * @return отображение из модели вычислителя в масси моделей микросборок
      * @throws IOException
      */
-    public static Map<IntervalPolyModel, List<IntervalModel>> readTF0Models(String prefix,
+    public static Map<IntervalPolyModel, List<IntervalModel>> readTF0Models(
+            String prefix,
             List<List<ExtendedInp>> inpsLists,
             double f0,
             SetIntervalContext ic) throws IOException, ParseException {
@@ -99,6 +100,10 @@ public class IntervalModel {
      */
     public SetInterval[] getTopBox() {
         return polyModel.getTopBox();
+    }
+
+    public ChipModel getThermoFreqModel() {
+        return thermoFreqModel;
     }
 
     /**
@@ -155,10 +160,22 @@ public class IntervalModel {
      * @return интервальная оценка критерия
      */
     public SetInterval eval(SetInterval[] box) {
+        return eval(box, getTemps());
+    }
+
+    /**
+     * Инетервальная оценка критерия оптимизации на заданном брусе и на заданном
+     * массиве температур.
+     *
+     * @param box брус
+     * @param temps массив температур
+     * @return интервальная оценка критерия
+     */
+    public SetInterval eval(SetInterval[] box, int[] temps) {
         SetInterval[] boxAndTemp = Arrays.copyOf(box, box.length + 1);
         SetInterval maxadf = ic.numsToInterval(0, 0);
-        for (int i = 0; i < temp.length; i++) {
-            int adcOut = temp[i];
+        for (int i = 0; i < temps.length; i++) {
+            int adcOut = temps[i];
             boxAndTemp[box.length] = ic.numsToInterval(adcOut, adcOut);
             SetInterval u = setEv.evaluate(boxAndTemp)[0];
             SetInterval f = evalThermoFreq(adcOut, u);
@@ -188,10 +205,11 @@ public class IntervalModel {
      * Вычислить оценку частоты f для всех температур из массива
      *
      * @param inp набор коэффициентов
+     * @param temps массив цифровых температур
      * @return массив оценок частоты
      */
-    public SetInterval[] evalF(PolyState.Inp inp) {
-        Rational[] u = polyModel.evalU(inp, getTemps());
+    public SetInterval[] evalF(PolyState.Inp inp, int[] temps) {
+        Rational[] u = polyModel.evalU(inp, temps);
         SetInterval[] result = new SetInterval[u.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = evalThermoFreq(temp[i], ic.numsToInterval(u[i], u[i]));
@@ -203,10 +221,11 @@ public class IntervalModel {
      * Вычислить оценку погрешности частоты f для всех температур из массива
      *
      * @param inp набор коэффициентов
+     * @param temps массив цифровых температур
      * @return массив оценок погрешности частоты
      */
-    public SetInterval[] evalDF(PolyState.Inp inp) {
-        SetInterval[] result = evalF(inp);
+    public SetInterval[] evalDF(PolyState.Inp inp, int[] temps) {
+        SetInterval[] result = evalF(inp, temps);
         for (int i = 0; i < result.length; i++) {
             result[i] = ic.sub(result[i], f0);
         }
@@ -218,10 +237,11 @@ public class IntervalModel {
      * из массива
      *
      * @param inp набор коэффициентов
+     * @param temps массив цифровых температур
      * @return массив оценок погрешности частоты
      */
-    public SetInterval[] evalPpm(PolyState.Inp inp) {
-        SetInterval[] result = evalDF(inp);
+    public SetInterval[] evalPpm(PolyState.Inp inp, int[] temps) {
+        SetInterval[] result = evalDF(inp, temps);
         for (int i = 0; i < result.length; i++) {
             result[i] = ic.mul(result[i], scale);
         }
@@ -235,10 +255,21 @@ public class IntervalModel {
      * @return худшая оценка
      */
     public double evalMaxPpm(PolyState.Inp inp) {
-        SetInterval[] result = evalPpm(inp);
-        double max = 0;
-        for (SetInterval v : result) {
-            max = Math.max(max, v.doubleMag());
+        return evalMaxPpm(inp, getTemps()).doubleMag();
+    }
+
+    /**
+     * Вычислить худшую оценку погрешности частоты в миллионных
+     *
+     * @param inp набор коэффициентов
+     * @param temps массив цифровых температур
+     * @return худшая оценка
+     */
+    public SetInterval evalMaxPpm(PolyState.Inp inp, int[] temps) {
+        SetInterval[] ppm = evalPpm(inp, temps);
+        SetInterval max = ic.numsToInterval(0, 0);
+        for (SetInterval v : ppm) {
+            max = ic.max(max, ic.abs(v));
         }
         return max;
     }
@@ -254,6 +285,34 @@ public class IntervalModel {
         f0 = ic.numsToInterval(thermoFreqModel.getF0(), thermoFreqModel.getF0());
         scale = ic.div(ic.numsToInterval(1e6, 1e6), f0);
         temp = thermoFreqModel.getAdcOuts();
+        Arrays.sort(temp);
+//        exploreINF();
+    }
+
+    private void exploreINF() {
+        if (setEv == null) {
+            return;
+        }
+        SetInterval[] top = getTopBox();
+        int k = 0;
+        for (int inf = 0; inf < 64; inf++) {
+            int t0 = 1535 + 8 * inf;
+            while (k < temp.length && temp[k] < t0) {
+                k++;
+            }
+            int[] tmp;
+            if (k == temp.length) {
+                tmp = new int[]{temp[k - 1]};
+            } else if (temp[k] == t0 || k == 0) {
+                tmp = new int[]{t0};
+            } else {
+                tmp = new int[]{temp[k - 1], temp[k]};
+            }
+            top[0] = ic.numsToInterval(inf, inf);
+            SetInterval ppm = eval(top, tmp);
+            System.out.println("inf=" + inf + " t0=" + t0 + "[" + tmp[0] + (tmp.length > 1 ? "," + tmp[1] : "") + "] "
+                    + "[" + ppm.doubleInf() + "," + ppm.doubleSup() + "]");
+        }
     }
 
 }

@@ -41,7 +41,7 @@ public class Application {
         startTime = System.currentTimeMillis();
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
         PrintWriter out = new PrintWriter(ba);
-        Optim.Record record = Optim.optimF(out, chip.thermoFreqModel,
+        Optim.Record record = Optim.optimF(out, chip.getThermoFreqModel(),
                 chip.getCC(), chip.getCF(), new AdcRange(0, 4095), chip.getF0());
         PolyState.Inp heuristicInp = record.inp;
         System.out.println(record.inp.toNom() + " +-" + record.bestDiff / record.targetF * 1e6);
@@ -97,7 +97,7 @@ public class Application {
 
     private static void showModelInpIntervalPpm(ChipShow chipShow, String modelName, IntervalModel chipModel, PolyState.Inp inp) throws IOException {
         int[] temp = chipModel.getTemps();
-        SetInterval[] ppm = chipModel.evalPpm(inp);
+        SetInterval[] ppm = chipModel.evalPpm(inp, temp);
         double[] x = new double[temp.length];
         double[] lowerY = new double[temp.length];
         double[] upperY = new double[temp.length];
@@ -183,7 +183,7 @@ public class Application {
                 allModels = IntervalModel.readTF0Models(dir + "m1", inps, 12000000, ic);
                 break;
             case 2:
-                plotDir = dir + "Plot1/";
+                plotDir = dir + "Plot2/";
                 inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
                 allModels = IntervalModel.readTF0Models(dir + "m2", inps, 12000000, ic);
                 break;
