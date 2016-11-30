@@ -26,15 +26,19 @@ public class Application {
 
     private static void doChip(String plotDirName, IntervalPolyModel ipm, int chipNo,
             Map<IntervalPolyModel, List<IntervalModel>> models) throws IOException, InterruptedException {
+        long startTime;
         IntervalModel chip = models.get(ipm).get(chipNo);
         System.out.println("Chip " + (chipNo + 1));
 
         // Interval optimization
+        startTime = System.currentTimeMillis();
         ThermOpt program = new ThermOpt(chip, eps, ic);
         int[] result = program.startOptimization();
         PolyState.Inp intervalInp = chip.pointAsInp(result);
+        System.out.println(((System.currentTimeMillis() - startTime + 999) / 1000) + " sec");
 
         // Heuristic optimization
+        startTime = System.currentTimeMillis();
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
         PrintWriter out = new PrintWriter(ba);
         Optim.Record record = Optim.optimF(out, chip.thermoFreqModel,
@@ -43,6 +47,7 @@ public class Application {
         System.out.println(record.inp.toNom() + " +-" + record.bestDiff / record.targetF * 1e6);
         out.close();
         ba.close();
+        System.out.println(((System.currentTimeMillis() - startTime + 999) / 1000) + " sec");
 
         // Plot and print
         if (gnuplot) {
@@ -77,14 +82,14 @@ public class Application {
                 continue;
             }
             IntervalModel model = models.get(ipm).get(chipNo);
-            showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " interval  " + intervalInp.toLongNom(), model, intervalInp);
+            showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " interval  ", model, intervalInp);
         }
         for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
             if (ipm == IntervalPolyModel.SPECIFIED) {
                 continue;
             }
             IntervalModel model = models.get(ipm).get(chipNo);
-            showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " heuristic " + heuristicInp.toLongNom(), model, heuristicInp);
+            showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " heuristic ", model, heuristicInp);
         }
         chipShow.closePdf();
         chipShow.closeAndRunGnuplot();
@@ -101,6 +106,8 @@ public class Application {
             lowerY[i] = ppm[i].doubleInf();
             upperY[i] = ppm[i].doubleSup();
         }
+        modelName += " " + inp.toNom();
+        modelName += " " + Math.ceil(chipModel.evalMaxPpm(inp) * 100) / 100 + "ppm";
         chipShow.withLines(x, lowerY, modelName + " снизу");
         chipShow.withLines(x, upperY, modelName + " сверху");
     }
