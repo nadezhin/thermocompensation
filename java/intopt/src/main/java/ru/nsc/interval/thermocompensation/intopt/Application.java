@@ -114,7 +114,7 @@ public class Application {
         System.out.println("  -p  use plain context");
         System.out.println("examples:");
         System.out.println(" P");
-        System.out.println(" 150616V15 -s1 -g0222222222222222222222222222222");
+        System.out.println(" 150616V15 -s1 -g");
         System.out.println(" 150601V15 -s1 -e0.1 -p");
         System.exit(0);
     }

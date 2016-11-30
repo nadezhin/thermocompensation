@@ -38,9 +38,7 @@ Run interval optimization:
 cd ${THERMOCOMPENSATION}/java/intopt
 mvn exec:exec
 
-Create jar with interval optimization:
-cd ${THERMOCOMPENSATION}/java/intopt
-mvn assembly:single
+Maven is not necessary to run interval optimization.
 The result jar is ${THERMOCOMPENSATION}/java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar
 
 Test it on short test:
