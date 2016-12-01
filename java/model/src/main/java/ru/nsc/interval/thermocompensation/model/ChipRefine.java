@@ -99,6 +99,10 @@ public class ChipRefine implements ChipModel {
         throw new UnsupportedOperationException();
     }
 
+    public boolean isMonotonic0() {
+        return base.isMonotonic0();
+    }
+
     public AdcRange newAdcRange() {
         return newAdcRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     }
