@@ -178,18 +178,17 @@ public class IntervalModel {
             int adcOut = temps[i];
             boxAndTemp[box.length] = ic.numsToInterval(adcOut, adcOut);
             SetInterval u = setEv.evaluate(boxAndTemp)[0];
-            SetInterval f = evalThermoFreq(adcOut, u);
-            SetInterval df = ic.sub(f, f0);
-            SetInterval adf = ic.abs(df);
-            maxadf = ic.max(maxadf, adf);
+            SetInterval fInf = ic.numsToInterval(
+                    thermoFreqModel.getLowerModelFfromAdcOut(CC, CF, u.doubleInf(), adcOut),
+                    thermoFreqModel.getLowerModelFfromAdcOut(CC, CF, u.doubleSup(), adcOut));
+            SetInterval fSup = ic.numsToInterval(
+                    thermoFreqModel.getUpperModelFfromAdcOut(CC, CF, u.doubleInf(), adcOut),
+                    thermoFreqModel.getUpperModelFfromAdcOut(CC, CF, u.doubleSup(), adcOut));
+            SetInterval dfInf = ic.abs(ic.sub(fInf, f0));
+            SetInterval dfSup = ic.abs(ic.sub(fSup, f0));
+            maxadf = ic.max(maxadf, ic.max(dfInf, dfSup));
         }
         return ic.mul(maxadf, scale);
-    }
-
-    private SetInterval evalThermoFreq(int adcOut, SetInterval u) {
-        double inf = thermoFreqModel.getLowerModelFfromAdcOut(CC, CF, u.doubleInf(), adcOut);
-        double sup = thermoFreqModel.getUpperModelFfromAdcOut(CC, CF, u.doubleSup(), adcOut);
-        return ic.numsToInterval(inf, sup);
     }
 
     /**
@@ -212,7 +211,11 @@ public class IntervalModel {
         Rational[] u = polyModel.evalU(inp, temps);
         SetInterval[] result = new SetInterval[u.length];
         for (int i = 0; i < result.length; i++) {
-            result[i] = evalThermoFreq(temp[i], ic.numsToInterval(u[i], u[i]));
+            int adcOut = temps[i];
+            SetInterval ui = ic.numsToInterval(u[i], u[i]);
+            double inf = thermoFreqModel.getLowerModelFfromAdcOut(CC, CF, ui.doubleInf(), adcOut);
+            double sup = thermoFreqModel.getUpperModelFfromAdcOut(CC, CF, ui.doubleSup(), adcOut);
+            result[i] = ic.numsToInterval(inf, sup);
         }
         return result;
     }
