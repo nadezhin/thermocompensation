@@ -253,6 +253,9 @@ public class ChipExpress implements ChipModel {
             return kd0 * v0 + kd1 * v1;
         }
     }
+// TODO
+//    lerpA,B(t)={A⊕(B⊖A)⊗t     if t<0.5
+//                B⊖(B⊖A)⊗(1⊖t) otherwise
 
     public double getDF(double cccf, double adcOut, int k) {
         double[][] coeffK = coeff[k];
