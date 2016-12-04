@@ -1,7 +1,7 @@
-# thermocompensation
+# Thermocompensation
 Application of interval optimization to thermocompensation
 
-Build instruction:
+## Build instruction:
 
 `cd ${THERMOCOMPENSATION}/java`
 
@@ -14,13 +14,13 @@ It contains 4 columns:
 - out       required output of polynom evaluator
 - freq      measured frequency used only for output
 
-Run heuristic optimization:
+## Run heuristic optimization:
 
 `cd ${THERMOCOMPENSATION}/java/optim`
 
 `mvn exec:exec`
 
-Expected output:
+## Expected output:
 ---
 ```
 14:  62 16 125 103 2 22 7 0 0 0 7 # f = 12000000 +- 9
@@ -39,7 +39,7 @@ chipNo: coefficients # f = freq +- delta
                 actual output for found coefficients.
 ```             
 
-Run interval optimization:
+## Run interval optimization:
 
 `cd ${THERMOCOMPENSATION}/java/intopt`
 
@@ -48,7 +48,7 @@ Run interval optimization:
 Maven is not necessary to run interval optimization.
 The result jar is `${THERMOCOMPENSATION}/java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar`
 
-Test it on short test:
+## Running test without gnuplot:
 
 `cd ${THERMOCOMPENSATION}/example`
 
@@ -56,7 +56,7 @@ Test it on short test:
 
 Chips in `${THERMOCOMPENSATION}/example/P` are optimized
 
-If gnuplot is installed
+## Running test using gnuplot:
 
 `cd ${THERMOCOMPENSATION}/example`
 
@@ -71,6 +71,7 @@ Try long test
 
 `java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar 150616V15 -s1 -e1.0 -g -p`
 
+## Excepted logs
 Logs of previous runs are in
 
 `${THERMOCOMPENSATION}/example/P/P.log`
