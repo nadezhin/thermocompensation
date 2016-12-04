@@ -2,8 +2,10 @@
 Application of interval optimization to thermocompensation
 
 Build instruction:
-cd ${THERMOCOMPENSATION}/java
-mvn clean install
+
+`cd ${THERMOCOMPENSATION}/java`
+
+`mvn clean install`
 
 File example/P.csv contains data for 8 devices.
 It contains 4 columns:
@@ -13,8 +15,9 @@ It contains 4 columns:
 - freq      measured frequency used only for output
 
 Run heuristic optimization:
-cd ${THERMOCOMPENSATION}/java/optim
-mvn exec:exec
+
+`cd ${THERMOCOMPENSATION}/java/optim`
+`mvn exec:exec`
 
 Expected output:
 ........
@@ -35,30 +38,43 @@ chipNo: coefficients # f = freq +- delta
                 actual output for found coefficients.
 
 Run interval optimization:
-cd ${THERMOCOMPENSATION}/java/intopt
-mvn exec:exec
+
+`cd ${THERMOCOMPENSATION}/java/intopt`
+
+`mvn exec:exec`
 
 Maven is not necessary to run interval optimization.
-The result jar is ${THERMOCOMPENSATION}/java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar
+The result jar is `${THERMOCOMPENSATION}/java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar`
 
 Test it on short test:
-cd ${THERMOCOMPENSATION}/example
-java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar P
-Chips in ${THERMOCOMPENSATION}/example/P are optimized
+
+`cd ${THERMOCOMPENSATION}/example`
+
+`java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar P`
+
+Chips in `${THERMOCOMPENSATION}/example/P` are optimized
 
 If gnuplot is installed
-cd ${THERMOCOMPENSATION}/example
-java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar P -g
+
+`cd ${THERMOCOMPENSATION}/example`
+
+`java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar P -g`
 Plots will be in
-${THERMOCOMPENSATION}/example/P/Plot
+
+`${THERMOCOMPENSATION}/example/P/Plot`
 
 Try long test
-cd ${THERMOCOMPENSATION}/example
-java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar 150616V15 -s1 -e1.0 -g -p
+`cd ${THERMOCOMPENSATION}/example`
+
+`java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar 150616V15 -s1 -e1.0 -g -p`
 
 Logs of previous runs are in
-${THERMOCOMPENSATION}/example/P/P.log
-${THERMOCOMPENSATION}/example/150616V15/s1.log
-${THERMOCOMPENSATION}/example/150601V15/s1.log
-${THERMOCOMPENSATION}/example/150601V15/s2.log
+
+`${THERMOCOMPENSATION}/example/P/P.log`
+
+`${THERMOCOMPENSATION}/example/150616V15/s1.log`
+
+`${THERMOCOMPENSATION}/example/150601V15/s1.log`
+
+`${THERMOCOMPENSATION}/example/150601V15/s2.log`
 
