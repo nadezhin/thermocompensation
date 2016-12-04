@@ -20,8 +20,8 @@ Run heuristic optimization:
 `mvn exec:exec`
 
 Expected output:
-........
--------------
+---
+```
 14:  62 16 125 103 2 22 7 0 0 0 7 # f = 12000000 +- 9
 7:  63 17 80 124 8 26 5 0 0 0 7 # f = 12000000 +- 14
 9:  63 16 88 125 1 24 8 0 0 0 7 # f = 12000000 +- 20
@@ -36,6 +36,7 @@ chipNo: coefficients # f = freq +- delta
 - freq          average frequency
 - delta         maximal delta between requred output and
                 actual output for found coefficients.
+```             
 
 Run interval optimization:
 
