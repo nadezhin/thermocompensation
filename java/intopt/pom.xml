@@ -29,6 +29,7 @@
         <dependency>
             <groupId>net.java.jinterval</groupId>
             <artifactId>jinterval-interval-java</artifactId>
+            <version>0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
