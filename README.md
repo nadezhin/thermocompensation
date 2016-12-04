@@ -17,6 +17,7 @@ It contains 4 columns:
 Run heuristic optimization:
 
 `cd ${THERMOCOMPENSATION}/java/optim`
+
 `mvn exec:exec`
 
 Expected output:
@@ -60,6 +61,7 @@ If gnuplot is installed
 `cd ${THERMOCOMPENSATION}/example`
 
 `java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar P -g`
+
 Plots will be in
 
 `${THERMOCOMPENSATION}/example/P/Plot`
