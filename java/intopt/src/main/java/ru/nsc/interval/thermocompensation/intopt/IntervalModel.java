@@ -26,6 +26,11 @@ import ru.nsc.interval.thermocompensation.model.PolyState;
 public class IntervalModel {
 
     /**
+     * Check that point model is within interval model.
+     */
+    private static final boolean CHECK_MODELS = true;
+
+    /**
      * Модель вычислителя.
      */
     private final IntervalPolyModel polyModel;
@@ -172,12 +177,37 @@ public class IntervalModel {
      * @return интервальная оценка критерия
      */
     public SetInterval eval(SetInterval[] box, int[] temps) {
+        PolyState.Inp inp = null;
+        if (CHECK_MODELS) {
+            boolean isSingleton = true;
+            for (SetInterval b : box) {
+                isSingleton = isSingleton && b.isSingleton();
+            }
+            if (isSingleton) {
+                inp = PolyState.Inp.genNom();
+                inp.INF = (int) box[0].doubleInf();
+                inp.SBIT = (int) box[1].doubleInf();
+                inp.K1BIT = (int) box[2].doubleInf();
+                inp.K2BIT = (int) box[3].doubleInf();
+                inp.K3BIT = (int) box[4].doubleInf();
+                inp.K4BIT = (int) box[5].doubleInf();
+                inp.K5BIT = (int) box[6].doubleInf();
+            }
+        }
         SetInterval[] boxAndTemp = Arrays.copyOf(box, box.length + 1);
         SetInterval maxadf = ic.numsToInterval(0, 0);
         for (int i = 0; i < temps.length; i++) {
             int adcOut = temps[i];
             boxAndTemp[box.length] = ic.numsToInterval(adcOut, adcOut);
             SetInterval u = setEv.evaluate(boxAndTemp)[0];
+            if (inp != null) {
+                inp.T = adcOut;
+                Rational up = polyModel.evalPoint(inp);
+                if (!u.isMember(up)) {
+                    System.out.println("Inp=" + inp.toNom() + " "
+                            + up.doubleValue() + " not in [" + u.doubleInf() + "," + u.doubleSup() + "]");
+                }
+            }
             SetInterval fInf = ic.numsToInterval(
                     thermoFreqModel.getLowerModelFfromAdcOut(CC, CF, u.doubleInf(), adcOut),
                     thermoFreqModel.getLowerModelFfromAdcOut(CC, CF, u.doubleSup(), adcOut));

@@ -3,7 +3,7 @@ package ru.nsc.interval.thermocompensation.intopt;
 import net.java.jinterval.expression.CodeList;
 import net.java.jinterval.expression.Expression;
 
-public class Functions {
+public class FunctionsIdeal {
 
     private static final String[] inputs = new String[]{"INFBIT", "SBIT", "K1BIT", "K2BIT", "K3BIT", "K4BIT", "K5BIT", "T"};
     private static final CodeList list = CodeList.create(inputs);

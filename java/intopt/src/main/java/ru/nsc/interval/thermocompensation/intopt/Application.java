@@ -113,8 +113,9 @@ public class Application {
     }
 
     private static void help() {
-        System.out.println("Usage: java -ea -Djna.library.path=../lib -jar intoptXXX.jar dir [-sN] [-eD] [-nN] [-g] [-p]");
+        System.out.println("Usage: java -ea -Djna.library.path=../lib -jar intoptXXX.jar dir [-sN] [-ideal] [-eD] [-nN] [-g] [-p]");
         System.out.println("  -sN stage N   - N=1 or N=2");
+        System.out.println("  -ideal  IDEAL model");
         System.out.println("  -eD value of eps");
         System.out.println("  -nN only chip N");
         System.out.println("  -g gnuplot graphs");
@@ -127,6 +128,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws Exception {
+        IntervalPolyModel ipm = IntervalPolyModel.SPECIFIED;
         int stage = 0;
         int chipNo = -1;
         List<String> argsList = new ArrayList<String>();
@@ -138,6 +140,8 @@ public class Application {
                     if (stage < 1 || stage > 2) {
                         help();
                     }
+                } else if (arg.equals("-ideal")) {
+                    ipm = IntervalPolyModel.IDEAL;
                 } else if (arg.startsWith("-e")) {
                     eps = Double.parseDouble(arg.substring(2));
                 } else if (arg.startsWith("-n")) {
@@ -190,7 +194,6 @@ public class Application {
             default:
                 throw new AssertionError();
         }
-        IntervalPolyModel ipm = IntervalPolyModel.IDEAL;
         List<IntervalModel> models = allModels.get(ipm);
         if (chipNo >= 0) {
             doChip(plotDir, ipm, chipNo, allModels);

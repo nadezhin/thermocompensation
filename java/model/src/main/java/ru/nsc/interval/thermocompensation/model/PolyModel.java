@@ -112,6 +112,10 @@ public class PolyModel {
             this.p2 = p2;
         }
 
+        public long getResult() {
+            return result;
+        }
+
         int getP() {
             return p1 + p2;
         }

@@ -19,7 +19,7 @@ public enum IntervalPolyModel {
     IDEAL {
         @Override
         public Expression getObjective() {
-            return Functions.getObjective();
+            return FunctionsIdeal.getObjective();
         }
 
         @Override
@@ -33,14 +33,28 @@ public enum IntervalPolyModel {
     SPECIFIED {
         @Override
         public Expression getObjective() {
-            return null;
+            return FunctionsSpecified.getObjective();
         }
 
         @Override
         public Rational evalPoint(PolyState.Inp inp) {
             boolean check = true;
             boolean fixBugP = true;
-            return Rational.valueOf(PolyModel.compute(inp, check, fixBugP));
+            if (false) {
+                // Debug model
+                PolyModel polyModel = PolyModel.computePolyModel(inp, fixBugP);
+                System.out.println("xd=" + polyModel.prinf.getResult());
+                System.out.println("xs=" + (polyModel.prs.getResult() >> 5));
+                System.out.println("pr2=" + polyModel.pr4.getResult());
+                System.out.println("res3=" + (polyModel.pr3.getResult() >> 10));
+                System.out.println("res4=" + (polyModel.pr2.getResult() >> 10));
+                System.out.println("res5=" + (polyModel.pr1.getResult() >> 10));
+                System.out.println("res6=" + (polyModel.pr0.getResult() >> 14));
+                System.out.println("u=" + polyModel.resultOut);
+                return Rational.valueOf(polyModel.resultOut);
+            } else {
+                return Rational.valueOf(PolyModel.compute(inp, check, fixBugP));
+            }
         }
     },
     /**
@@ -136,7 +150,7 @@ public enum IntervalPolyModel {
         inp.T = saveT;
         return result;
     }
-    
+
     public String getAbbrev() {
         return name().substring(0, 5);
     }
