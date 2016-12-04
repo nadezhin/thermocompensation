@@ -63,10 +63,10 @@ Chips in `${THERMOCOMPENSATION}/example/P` are optimized
 `java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar P -g`
 
 Plots will be in
-
 `${THERMOCOMPENSATION}/example/P/Plot`
 
 Try long test
+
 `cd ${THERMOCOMPENSATION}/example`
 
 `java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar 150616V15 -s1 -e1.0 -g -p`
