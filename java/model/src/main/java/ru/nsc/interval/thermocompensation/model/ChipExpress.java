@@ -237,6 +237,7 @@ public class ChipExpress implements ChipModel {
 
     public double getDF(double cc, double cf, double adcOut, double dacInp) {
         double cccf = cc + cf * CF2CC;
+        dacInp = (float) dacInp; // avoid non-monotonic behaviour
         int k = Math.min(Math.max((int) (dacInp / 256), 0), 15);
         int dacInp0 = 256 * k;
         int dacInp1 = Math.min(256 * (k + 1), 4095);
@@ -252,6 +253,9 @@ public class ChipExpress implements ChipModel {
             return kd0 * v0 + kd1 * v1;
         }
     }
+// TODO
+//    lerpA,B(t)={A⊕(B⊖A)⊗t     if t<0.5
+//                B⊖(B⊖A)⊗(1⊖t) otherwise
 
     public double getDF(double cccf, double adcOut, int k) {
         double[][] coeffK = coeff[k];

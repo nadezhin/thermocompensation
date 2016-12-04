@@ -204,7 +204,9 @@ ppm >= (f_sup(T-i,u(T_i.K),c)-f0)/f0 .
 Минимальное ppm. удовлетворяющее всем ограничением, есть
 ppm = max( ppm_1, .., ppm_i, ... ),
 где
-ppm_i = max ( abs(ff_inf(T_i,u(T_i,K),c)-f0)/f0 , abs(ff_sup(T_i,u(T_i,K),c)-f0)/f0 ) 
+ppm_i = max ( f0-ff_inf(T_i,u(T_i,K),c) , ff_sup(T_i,u(T_i,K),c)-f0 ) / f0
+      = max ( abs(ff_inf(T_i,u(T_i,K),c)-f0) , abs(ff_sup(T_i,u(T_i,K),c)-f0) ) / f0
+
 
 Необходимо подобрать K и c, при котором ppm минимально.
 
