@@ -56,3 +56,9 @@ Try long test
 cd ${THERMOCOMPENSATION}/example
 java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar 150616V15 -s1 -e1.0 -g -p
 
+Logs of previous runs are in
+${THERMOCOMPENSATION}/example/P/P.log
+${THERMOCOMPENSATION}/example/150616V15/s1.log
+${THERMOCOMPENSATION}/example/150601V15/s1.log
+${THERMOCOMPENSATION}/example/150601V15/s2.log
+
