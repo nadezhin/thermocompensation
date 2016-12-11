@@ -22,12 +22,12 @@ public class FunctionsSpecified {
     private static final Expression xs = (((xd.mul(list.lit("16").add(SBIT))).div(list.lit("32"))).add(list.lit("0.5"))).floor();
     private static final Expression pr2 = ((K4BIT.sub(list.lit("25"))).mul(list.lit("512"))).add(K5BIT.mul(xs));
     private static final Expression res3 = ((K3BIT.mul(list.lit("512"))).add(list.lit("4096")))
-            .add(((pr2.mul(xs).div(list.lit("1024"))).add(list.lit("0.5"))).floor());
+            .add((((pr2.mul(xs)).div(list.lit("1024"))).add(list.lit("0.5"))).floor());
     private static final Expression res4 = ((K2BIT.mul(list.lit("128"))).add(list.lit("2560")))
-            .add(((res3.mul(xs).div(list.lit("1024"))).add(list.lit("0.5"))).floor());
-    private static final Expression res5 = ((K1BIT.neg().mul(list.lit("128"))).sub(list.lit("12480")))
-            .add((((res4.mul(xs).sub(list.lit("1"))).div(list.lit("1024"))).add(list.lit("0.5"))).floor());
-    private static final Expression res6 = (list.lit("1032").add((res5.mul(xs).div(list.lit("16384")))).add(list.lit("0.5")));
+            .add((((res3.mul(xs)).div(list.lit("1024"))).add(list.lit("0.5"))).floor());
+    private static final Expression res5 = (((K1BIT.neg()).mul(list.lit("128"))).sub(list.lit("12480")))
+            .add(((((res4.mul(xs)).sub(list.lit("1"))).div(list.lit("1024"))).add(list.lit("0.5"))).floor());
+    private static final Expression res6 = list.lit("1032").add((((res5.mul(xs)).div(list.lit("16384"))).add(list.lit("0.5"))).floor());
     private static final Expression u = list.lit("0").max(list.lit("4095").min(res6));
 
     public static final Expression getObjective() {
