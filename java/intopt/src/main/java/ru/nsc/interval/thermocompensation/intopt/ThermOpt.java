@@ -69,7 +69,7 @@ public class ThermOpt {
             if (currentSupOfGlobalOptimum < supOfGlobalOptimum) {
                 supOfGlobalOptimum = currentSupOfGlobalOptimum;
                 for (int i = 0; i < result.length; i++) {
-                    result[i] = (int) midBox[i].doubleInf();
+                    result[i] = (int) midBox[i].doubleSup();
                 }
             }
         }
