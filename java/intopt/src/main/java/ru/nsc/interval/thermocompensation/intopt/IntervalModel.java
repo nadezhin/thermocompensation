@@ -28,7 +28,7 @@ public class IntervalModel {
     /**
      * Check that point model is within interval model.
      */
-    private static final boolean CHECK_MODELS = true;
+    private static final boolean CHECK_MODELS = false;
 
     /**
      * Модель вычислителя.

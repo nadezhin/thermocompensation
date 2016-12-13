@@ -35,7 +35,7 @@ public class FunctionsSpecified {
     static final Expression pr2 = K4.add(K5.mul(xs));
     static final Expression res3 = K3.add(round(pr2.mul(xs), 10));
     static final Expression res4 = K2.add(round(res3.mul(xs), 10));
-    static final Expression res5 = K1.add(round(res4.mul(xs), 10));
+    static final Expression res5 = K1.add(roundBuggy(res4.mul(xs), 10));
     static final Expression res6 = K0.add(round(res5.mul(xs), 14));
     static final Expression u = l("0").max(l("4095").min(res6));
 
