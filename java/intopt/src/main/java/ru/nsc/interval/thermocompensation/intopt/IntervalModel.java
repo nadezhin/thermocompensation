@@ -206,6 +206,26 @@ public class IntervalModel {
                 if (!u.isMember(up)) {
                     System.out.println("Inp=" + inp.toNom() + " "
                             + up.doubleValue() + " not in [" + u.doubleInf() + "," + u.doubleSup() + "]");
+                    if (polyModel == IntervalPolyModel.SPECIFIED) {
+                        SetIntervalEvaluator ev = SetIntervalEvaluator.create(ic, FunctionsSpecified.getList(),
+                                FunctionsSpecified.xd,
+                                FunctionsSpecified.xs,
+                                FunctionsSpecified.pr2,
+                                FunctionsSpecified.res3,
+                                FunctionsSpecified.res4,
+                                FunctionsSpecified.res5,
+                                FunctionsSpecified.res6,
+                                FunctionsSpecified.u);
+                        SetInterval[] vals = ev.evaluate(boxAndTemp);
+                        System.out.println("xd=" + print(vals[0]));
+                        System.out.println("xs=" + print(vals[1]));
+                        System.out.println("pr2=" + print(vals[2]));
+                        System.out.println("res3=" + print(vals[3]));
+                        System.out.println("res4=" + print(vals[4]));
+                        System.out.println("res5=" + print(vals[5]));
+                        System.out.println("res6=" + print(vals[6]));
+                        System.out.println("u=" + print(vals[7]));
+                    }
                 }
             }
             SetInterval fInf = ic.numsToInterval(
@@ -344,8 +364,12 @@ public class IntervalModel {
             top[0] = ic.numsToInterval(inf, inf);
             SetInterval ppm = eval(top, tmp);
             System.out.println("inf=" + inf + " t0=" + t0 + "[" + tmp[0] + (tmp.length > 1 ? "," + tmp[1] : "") + "] "
-                    + "[" + ppm.doubleInf() + "," + ppm.doubleSup() + "]");
+                    + print(ppm));
         }
+    }
+
+    private static String print(SetInterval x) {
+        return "[" + x.doubleInf() + "," + x.doubleSup() + "]";
     }
 
 }
