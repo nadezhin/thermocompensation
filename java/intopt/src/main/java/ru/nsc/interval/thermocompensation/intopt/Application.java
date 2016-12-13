@@ -78,14 +78,14 @@ public class Application {
                 "Отклонение компенсированной частоты (ppm)",
                 "%.1f");
         for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
-            if (ipm == IntervalPolyModel.SPECIFIED) {
+            if (ipm != IntervalPolyModel.MANUFACTURED) {
                 continue;
             }
             IntervalModel model = models.get(ipm).get(chipNo);
             showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " interval  ", model, intervalInp);
         }
         for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
-            if (ipm == IntervalPolyModel.SPECIFIED) {
+            if (ipm != IntervalPolyModel.MANUFACTURED) {
                 continue;
             }
             IntervalModel model = models.get(ipm).get(chipNo);
