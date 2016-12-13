@@ -38,7 +38,7 @@ public enum IntervalPolyModel {
 
         @Override
         public Rational evalPoint(PolyState.Inp inp) {
-            boolean check = true;
+            boolean check = false;
             boolean fixBugP = true;
             if (false) {
                 // Debug model
@@ -68,7 +68,7 @@ public enum IntervalPolyModel {
 
         @Override
         public Rational evalPoint(PolyState.Inp inp) {
-            boolean check = true;
+            boolean check = false;
             boolean fixBugP = false;
             return Rational.valueOf(PolyModel.compute(inp, check, fixBugP));
         }
