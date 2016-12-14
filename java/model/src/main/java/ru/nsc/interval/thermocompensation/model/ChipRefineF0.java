@@ -48,24 +48,25 @@ public class ChipRefineF0 extends ChipRefine {
         for (int chipNo = 0; chipNo < chipModels.length; chipNo++) {
             if (!parse.getMeasTN(chipNo).isEmpty()) {
                 String chipNoStr = String.format("%1$02d", chipNo + 1);
-                ChipT chip = new ChipT(chipNoStr, runTime, parseTemp, new ParseSeq(parse, chipNo), CapSettings.STD_F0);
-                if (chip.badFreq) {
-                    System.out.print('?');
-                } else {
-                    ChipRefineF0 chipModel;
-                    try {
-                        chipModel = new ChipRefineF0(chip, inpsLists.get(chipNo).get(0).inp, f0);
-                    } catch (Exception e) {
-                        System.out.print('!');
+                ChipRefineF0 chipModel;
+                try {
+                    ChipT chip = new ChipT(chipNoStr, runTime, parseTemp, new ParseSeq(parse, chipNo), CapSettings.STD_F0);
+                    if (chip.badFreq) {
+                        System.out.print('?');
                         continue;
                     }
-                    if (chipModel.isMonotonic0()) {
-                        chipModels[chipNo] = chipModel;
-                        System.out.print('+');
-                    } else {
+                    chipModel = new ChipRefineF0(chip, inpsLists.get(chipNo).get(0).inp, f0);
+                    if (!chipModel.isMonotonic0()) {
                         System.out.print('X');
+                        continue;
                     }
+                } catch (Exception e) {
+                    System.out.print('!');
+                    continue;
+
                 }
+                chipModels[chipNo] = chipModel;
+                System.out.print('+');
             } else {
                 System.out.print('.');
             }
