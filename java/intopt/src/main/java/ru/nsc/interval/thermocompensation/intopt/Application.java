@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +128,22 @@ public class Application {
         System.exit(0);
     }
 
+    private static double readFreq(String dir) throws IOException {
+        for (String line : Files.readAllLines(Paths.get(dir, "freq.txt"))) {
+            try {
+                return Double.parseDouble(line.trim());
+            } catch (NumberFormatException e) {
+            }
+        }
+        return 12000000;
+    }
+
+    private static double readAndShowFreq(String dir) throws IOException {
+        double f0 = readFreq(dir);
+        System.out.println("f0=" + f0);
+        return f0;
+    }
+
     public static void main(String[] args) throws Exception {
         IntervalPolyModel ipm = IntervalPolyModel.SPECIFIED;
         int stage = 0;
@@ -184,12 +201,12 @@ public class Application {
             case 1:
                 plotDir = dir + "Plot1/";
                 inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "nom_inps.txt"));
-                allModels = IntervalModel.readTF0Models(dir + "m1", inps, 12000000, ic);
+                allModels = IntervalModel.readTF0Models(dir + "m1", inps, readAndShowFreq(dir), ic);
                 break;
             case 2:
                 plotDir = dir + "Plot2/";
                 inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
-                allModels = IntervalModel.readTF0Models(dir + "m2", inps, 12000000, ic);
+                allModels = IntervalModel.readTF0Models(dir + "m2", inps, readAndShowFreq(dir), ic);
                 break;
             default:
                 throw new AssertionError();
