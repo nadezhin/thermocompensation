@@ -52,7 +52,13 @@ public class ChipRefineF0 extends ChipRefine {
                 if (chip.badFreq) {
                     System.out.print('?');
                 } else {
-                    ChipRefineF0 chipModel = new ChipRefineF0(chip, inpsLists.get(chipNo).get(0).inp, f0);
+                    ChipRefineF0 chipModel;
+                    try {
+                        chipModel = new ChipRefineF0(chip, inpsLists.get(chipNo).get(0).inp, f0);
+                    } catch (Exception e) {
+                        System.out.print('!');
+                        continue;
+                    }
                     if (chipModel.isMonotonic0()) {
                         chipModels[chipNo] = chipModel;
                         System.out.print('+');
