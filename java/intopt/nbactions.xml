@@ -10,7 +10,7 @@
             <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
         </goals>
         <properties>
-            <exec.args>-ea -Djna.library.path=../lib -classpath %classpath ru.nsc.interval.thermocompensation.intopt.Application 150616V15 -s1 -e0.01 -g</exec.args>
+            <exec.args>-ea -Djna.library.path=../lib -classpath %classpath ru.nsc.interval.thermocompensation.intopt.Application 160202-GOLD-40+70 -s1 -g</exec.args>
             <exec.executable>java</exec.executable>
             <exec.workingdir>../../example</exec.workingdir>
         </properties>
@@ -25,7 +25,7 @@
             <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
         </goals>
         <properties>
-            <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -ea -Djna.library.path=../lib -classpath %classpath ru.nsc.interval.thermocompensation.intopt.Application 150616V15 -s1 -e0.01 -g</exec.args>
+            <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -ea -Djna.library.path=../lib -classpath %classpath ru.nsc.interval.thermocompensation.intopt.Application 160202-GOLD-40+70 -s1 -g</exec.args>
             <exec.executable>java</exec.executable>
             <jpda.listen>true</jpda.listen>
             <exec.workingdir>../../example</exec.workingdir>
@@ -41,7 +41,7 @@
             <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
         </goals>
         <properties>
-            <exec.args>-ea -Djna.library.path=../lib -classpath %classpath ru.nsc.interval.thermocompensation.intopt.Application 150616V15 -s1 -e0.01 -g</exec.args>
+            <exec.args>-ea -Djna.library.path=../lib -classpath %classpath ru.nsc.interval.thermocompensation.intopt.Application 160202-GOLD-40+70 -s1 -g</exec.args>
             <exec.executable>java</exec.executable>
             <exec.workingdir>../../example</exec.workingdir>
         </properties>

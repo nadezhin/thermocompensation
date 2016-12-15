@@ -16,11 +16,8 @@ import ru.nsc.interval.thermocompensation.parse.ParseTemp;
  */
 public class ChipRefineF0 extends ChipRefine {
 
-    private final double f0;
-
-    public ChipRefineF0(ChipT chipT, PolyState.Inp inp, double f0) {
+    public ChipRefineF0(ChipT chipT, PolyState.Inp inp) {
         super(new ChipExpress(chipT), chipT, inp);
-        this.f0 = f0;
     }
 
     @Override
@@ -32,12 +29,7 @@ public class ChipRefineF0 extends ChipRefine {
         return result;
     }
 
-    @Override
-    public double getF0() {
-        return f0;
-    }
-
-    public static ChipModel[] readChips(String prefix, List<List<ExtendedInp>> inpsLists, double f0) throws IOException, ParseException {
+    public static ChipModel[] readChips(String prefix, List<List<ExtendedInp>> inpsLists) throws IOException, ParseException {
         String runTime = "";
         Path pathT = Paths.get(prefix + "_t.txt");
         Path pathF = Paths.get(prefix + "_f0.txt");
@@ -48,24 +40,24 @@ public class ChipRefineF0 extends ChipRefine {
         for (int chipNo = 0; chipNo < chipModels.length; chipNo++) {
             if (!parse.getMeasTN(chipNo).isEmpty()) {
                 String chipNoStr = String.format("%1$02d", chipNo + 1);
-                ChipT chip = new ChipT(chipNoStr, runTime, parseTemp, new ParseSeq(parse, chipNo), CapSettings.STD_F0);
-                if (chip.badFreq) {
-                    System.out.print('?');
-                } else {
-                    ChipRefineF0 chipModel;
-                    try {
-                        chipModel = new ChipRefineF0(chip, inpsLists.get(chipNo).get(0).inp, f0);
-                    } catch (Exception e) {
-                        System.out.print('!');
+                ChipRefineF0 chipModel;
+                try {
+                    ChipT chip = new ChipT(chipNoStr, runTime, parseTemp, new ParseSeq(parse, chipNo), CapSettings.STD_F0);
+                    if (chip.badFreq) {
+                        System.out.print('?');
                         continue;
                     }
-                    if (chipModel.isMonotonic0()) {
-                        chipModels[chipNo] = chipModel;
-                        System.out.print('+');
-                    } else {
+                    chipModel = new ChipRefineF0(chip, inpsLists.get(chipNo).get(0).inp);
+                    if (!chipModel.isMonotonic0()) {
                         System.out.print('X');
+                        continue;
                     }
+                } catch (Exception e) {
+                    System.out.print('!');
+                    continue;
                 }
+                chipModels[chipNo] = chipModel;
+                System.out.print('+');
             } else {
                 System.out.print('.');
             }

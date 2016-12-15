@@ -94,11 +94,6 @@ public class ChipRefine implements ChipModel {
         return null;
     }
 
-    @Override
-    public double getF0() {
-        throw new UnsupportedOperationException();
-    }
-
     public boolean isMonotonic0() {
         return base.isMonotonic0();
     }

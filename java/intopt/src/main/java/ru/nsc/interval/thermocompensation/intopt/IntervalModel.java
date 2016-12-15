@@ -45,10 +45,10 @@ public class IntervalModel {
 
     private final SetIntervalEvaluator setEv;
     private final SetInterval f0;
+    private final int CC;
+    private final int CF;
     private final SetInterval scale;
     private final int[] temp;
-    private static final int CC = 0;
-    private static final int CF = 0;
 
     /**
      * Построить интервальные модели для набора микросборок из CSV файла.
@@ -61,8 +61,24 @@ public class IntervalModel {
      * @throws IOException
      */
     public static Map<IntervalPolyModel, List<IntervalModel>> readCsvModels(String fileName, SetIntervalContext ic) throws IOException {
-        ChipModel[] thermoFreqModels = ChipPoints.readChipPoints(new File(fileName));
-        return makeModels(thermoFreqModels, ic);
+        final int CC = 0;
+        final int CF = 0;
+        ChipPoints[] thermoFreqModels = ChipPoints.readChipPoints(new File(fileName));
+        Map<IntervalPolyModel, List<IntervalModel>> result = new LinkedHashMap<>();
+        for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
+            List<IntervalModel> models = new ArrayList<>();
+            for (int chipNo = 0; chipNo < thermoFreqModels.length; chipNo++) {
+                ChipPoints tfm = thermoFreqModels[chipNo];
+                IntervalModel model = null;
+                if (tfm != null) {
+                    double f0 = tfm.getF0();
+                    model = new IntervalModel(ipm, tfm, f0, CC, CF, ic);
+                }
+                models.add(model);
+            }
+            result.put(ipm, models);
+        }
+        return result;
     }
 
     /**
@@ -72,7 +88,8 @@ public class IntervalModel {
      *
      * @param prefix префикс имени t/f0 файлов
      * @param inpsLists наборы, вокруг которых проводились измерения
-     * @param f0 требуемая частота
+     * @param taskLists наборы, из которых ьерутся f0, CC, CF для задачи
+     * оптимизации
      * @param ic интервальный контекст для промежуточных вычислениях в моделях
      * @return отображение из модели вычислителя в масси моделей микросборок
      * @throws IOException
@@ -80,18 +97,23 @@ public class IntervalModel {
     public static Map<IntervalPolyModel, List<IntervalModel>> readTF0Models(
             String prefix,
             List<List<ExtendedInp>> inpsLists,
-            double f0,
+            List<List<ExtendedInp>> taskLists,
             SetIntervalContext ic) throws IOException, ParseException {
-        ChipModel[] thermoFreqModels = ChipRefineF0.readChips(prefix, inpsLists, f0);
-        return makeModels(thermoFreqModels, ic);
-    }
-
-    private static Map<IntervalPolyModel, List<IntervalModel>> makeModels(ChipModel[] thermoFreqModels, SetIntervalContext ic) {
+        ChipModel[] thermoFreqModels = ChipRefineF0.readChips(prefix, inpsLists);
         Map<IntervalPolyModel, List<IntervalModel>> result = new LinkedHashMap<>();
         for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
             List<IntervalModel> models = new ArrayList<>();
-            for (ChipModel tfm : thermoFreqModels) {
-                models.add(tfm != null ? new IntervalModel(ipm, tfm, ic) : null);
+            for (int chipNo = 0; chipNo < thermoFreqModels.length && chipNo < taskLists.size(); chipNo++) {
+                ChipModel tfm = thermoFreqModels[chipNo];
+                IntervalModel model = null;
+                if (tfm != null && !taskLists.get(chipNo).isEmpty()) {
+                    ExtendedInp einp = taskLists.get(chipNo).get(0);
+                    PolyState.Inp inp = einp.inp;
+                    if (!Double.isNaN(einp.f)) {
+                        model = new IntervalModel(ipm, tfm, einp.f, inp.CC, inp.CF, ic);
+                    }
+                }
+                models.add(model);
             }
             result.put(ipm, models);
         }
@@ -117,7 +139,7 @@ public class IntervalModel {
      * @return требуемая частота
      */
     public double getF0() {
-        return thermoFreqModel.getF0();
+        return f0.doubleInf();
     }
 
     /**
@@ -327,16 +349,18 @@ public class IntervalModel {
         return max;
     }
 
-    private IntervalModel(IntervalPolyModel polyModel, ChipModel thermoFreqModel, SetIntervalContext ic) {
+    private IntervalModel(IntervalPolyModel polyModel, ChipModel thermoFreqModel, double f0, int cc, int cf, SetIntervalContext ic) {
         this.polyModel = polyModel;
         this.thermoFreqModel = thermoFreqModel;
+        this.f0 = ic.numsToInterval(f0, f0);
+        CC = cc;
+        CF = cf;
         this.ic = ic;
         Expression objective = polyModel.getObjective();
         setEv = objective != null
                 ? SetIntervalEvaluator.create(ic, objective.getCodeList(), objective)
                 : null;
-        f0 = ic.numsToInterval(thermoFreqModel.getF0(), thermoFreqModel.getF0());
-        scale = ic.div(ic.numsToInterval(1e6, 1e6), f0);
+        scale = ic.div(ic.numsToInterval(1e6, 1e6), this.f0);
         temp = thermoFreqModel.getAdcOuts();
         Arrays.sort(temp);
 //        exploreINF();

@@ -306,11 +306,6 @@ public class ChipExpress implements ChipModel {
         return null;
     }
 
-    @Override
-    public double getF0() {
-        throw new UnsupportedOperationException();
-    }
-
     public void showF_Interval(int cc, int cf, int dacInp, String fileName) throws IOException {
         PrintWriter out = new PrintWriter(fileName);
         out.println("# adcOut lowerF upperF widF");

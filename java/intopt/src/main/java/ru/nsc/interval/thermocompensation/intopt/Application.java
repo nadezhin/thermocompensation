@@ -29,7 +29,7 @@ public class Application {
             Map<IntervalPolyModel, List<IntervalModel>> models) throws IOException, InterruptedException {
         long startTime;
         IntervalModel chip = models.get(ipm).get(chipNo);
-        System.out.println("Chip " + (chipNo + 1));
+        System.out.println("Chip " + (chipNo + 1) + " f0=" + chip.getF0() + " CC=" + chip.getCC() + " CF=" + chip.getCF());
 
         // Interval optimization
         startTime = System.currentTimeMillis();
@@ -128,22 +128,6 @@ public class Application {
         System.exit(0);
     }
 
-    private static double readFreq(String dir) throws IOException {
-        for (String line : Files.readAllLines(Paths.get(dir, "freq.txt"))) {
-            try {
-                return Double.parseDouble(line.trim());
-            } catch (NumberFormatException e) {
-            }
-        }
-        return 12000000;
-    }
-
-    private static double readAndShowFreq(String dir) throws IOException {
-        double f0 = readFreq(dir);
-        System.out.println("f0=" + f0);
-        return f0;
-    }
-
     public static void main(String[] args) throws Exception {
         IntervalPolyModel ipm = IntervalPolyModel.SPECIFIED;
         int stage = 0;
@@ -191,7 +175,7 @@ public class Application {
         }
         String plotDir;
         Map<IntervalPolyModel, List<IntervalModel>> allModels;
-        List<List<ExtendedInp>> inps;
+        List<List<ExtendedInp>> inps, tasks;
         switch (stage) {
             case 0:
                 plotDir = dir + "Plot/";
@@ -201,12 +185,13 @@ public class Application {
             case 1:
                 plotDir = dir + "Plot1/";
                 inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "nom_inps.txt"));
-                allModels = IntervalModel.readTF0Models(dir + "m1", inps, readAndShowFreq(dir), ic);
+                tasks = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
+                allModels = IntervalModel.readTF0Models(dir + "m1", inps, tasks, ic);
                 break;
             case 2:
                 plotDir = dir + "Plot2/";
-                inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
-                allModels = IntervalModel.readTF0Models(dir + "m2", inps, readAndShowFreq(dir), ic);
+                inps = tasks = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
+                allModels = IntervalModel.readTF0Models(dir + "m2", inps, tasks, ic);
                 break;
             default:
                 throw new AssertionError();
