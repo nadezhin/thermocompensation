@@ -217,7 +217,7 @@ public class IntervalModel {
             }
         }
         SetInterval[] boxAndTemp = Arrays.copyOf(box, box.length + 1);
-        SetInterval maxadf = ic.numsToInterval(0, 0);
+        SetInterval maxAbsDiffFreq = ic.numsToInterval(0, 0);
         for (int i = 0; i < temps.length; i++) {
             int adcOut = temps[i];
             boxAndTemp[box.length] = ic.numsToInterval(adcOut, adcOut);
@@ -258,9 +258,9 @@ public class IntervalModel {
                     thermoFreqModel.getUpperModelFfromAdcOut(CC, CF, u.doubleSup(), adcOut));
             SetInterval dfInf = ic.abs(ic.sub(fInf, f0));
             SetInterval dfSup = ic.abs(ic.sub(fSup, f0));
-            maxadf = ic.max(maxadf, ic.max(dfInf, dfSup));
+            maxAbsDiffFreq = ic.max(maxAbsDiffFreq, ic.max(dfInf, dfSup));
         }
-        return ic.mul(maxadf, scale);
+        return ic.mul(maxAbsDiffFreq, scale);
     }
 
     /**
