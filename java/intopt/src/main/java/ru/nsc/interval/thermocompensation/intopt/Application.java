@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ public class Application {
             Map<IntervalPolyModel, List<IntervalModel>> models) throws IOException, InterruptedException {
         long startTime;
         IntervalModel chip = models.get(ipm).get(chipNo);
-        System.out.println("Chip " + (chipNo + 1));
+        System.out.println("Chip " + (chipNo + 1) + " f0=" + chip.getF0() + " CC=" + chip.getCC() + " CF=" + chip.getCF());
 
         // Interval optimization
         startTime = System.currentTimeMillis();
@@ -78,14 +79,14 @@ public class Application {
                 "Отклонение компенсированной частоты (ppm)",
                 "%.1f");
         for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
-            if (ipm == IntervalPolyModel.SPECIFIED) {
+            if (ipm != IntervalPolyModel.MANUFACTURED) {
                 continue;
             }
             IntervalModel model = models.get(ipm).get(chipNo);
             showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " interval  ", model, intervalInp);
         }
         for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
-            if (ipm == IntervalPolyModel.SPECIFIED) {
+            if (ipm != IntervalPolyModel.MANUFACTURED) {
                 continue;
             }
             IntervalModel model = models.get(ipm).get(chipNo);
@@ -174,7 +175,7 @@ public class Application {
         }
         String plotDir;
         Map<IntervalPolyModel, List<IntervalModel>> allModels;
-        List<List<ExtendedInp>> inps;
+        List<List<ExtendedInp>> inps, tasks;
         switch (stage) {
             case 0:
                 plotDir = dir + "Plot/";
@@ -184,12 +185,13 @@ public class Application {
             case 1:
                 plotDir = dir + "Plot1/";
                 inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "nom_inps.txt"));
-                allModels = IntervalModel.readTF0Models(dir + "m1", inps, 12000000, ic);
+                tasks = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
+                allModels = IntervalModel.readTF0Models(dir + "m1", inps, tasks, ic);
                 break;
             case 2:
                 plotDir = dir + "Plot2/";
-                inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
-                allModels = IntervalModel.readTF0Models(dir + "m2", inps, 12000000, ic);
+                inps = tasks = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
+                allModels = IntervalModel.readTF0Models(dir + "m2", inps, tasks, ic);
                 break;
             default:
                 throw new AssertionError();

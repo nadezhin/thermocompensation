@@ -37,7 +37,7 @@ chipNo: coefficients # f = freq +- delta
 - freq          average frequency
 - delta         maximal delta between requred output and
                 actual output for found coefficients.
-```             
+```
 
 ## Run interval optimization:
 
@@ -69,14 +69,12 @@ Try long test
 
 `cd ${THERMOCOMPENSATION}/example`
 
-`java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar 150616V15 -s1 -e1.0 -g -p`
+`java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar 160202-GOLD-40+70 -s1 -g`
 
 ## Excepted logs
 Logs of previous runs are in
 
 `${THERMOCOMPENSATION}/example/P/P.log`
-
-`${THERMOCOMPENSATION}/example/150616V15/s1.log`
 
 `${THERMOCOMPENSATION}/example/150601V15/s1.log`
 

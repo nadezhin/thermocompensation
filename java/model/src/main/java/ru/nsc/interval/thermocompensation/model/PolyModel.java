@@ -305,6 +305,7 @@ public class PolyModel {
      *
      */
     public static PolyModel computePolyModel(PolyState.Inp inp, boolean fixBugP) {
+        inp.ENwork = 1;
         return new PolyModel(inp, fixBugP);
     }
 
@@ -859,7 +860,6 @@ public class PolyModel {
         assert res6 >= -290559L && res6 <= 751493L;
         int resultOut = (res6 < 0 ? 0 : res6 >= (1L << 12) ? 4095 : (int) res6);
         if (check) {
-            inp.ENwork = 1;
             PolyModel pm = computePolyModel(inp, fixBugP);
             assert pm.prs.result == prs.result;
             assert pm.prs.p1 == prs.p1;

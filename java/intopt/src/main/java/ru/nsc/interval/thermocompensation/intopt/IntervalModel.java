@@ -28,7 +28,7 @@ public class IntervalModel {
     /**
      * Check that point model is within interval model.
      */
-    private static final boolean CHECK_MODELS = true;
+    private static final boolean CHECK_MODELS = false;
 
     /**
      * Модель вычислителя.
@@ -45,10 +45,10 @@ public class IntervalModel {
 
     private final SetIntervalEvaluator setEv;
     private final SetInterval f0;
+    private final int CC;
+    private final int CF;
     private final SetInterval scale;
     private final int[] temp;
-    private static final int CC = 0;
-    private static final int CF = 0;
 
     /**
      * Построить интервальные модели для набора микросборок из CSV файла.
@@ -61,8 +61,24 @@ public class IntervalModel {
      * @throws IOException
      */
     public static Map<IntervalPolyModel, List<IntervalModel>> readCsvModels(String fileName, SetIntervalContext ic) throws IOException {
-        ChipModel[] thermoFreqModels = ChipPoints.readChipPoints(new File(fileName));
-        return makeModels(thermoFreqModels, ic);
+        final int CC = 0;
+        final int CF = 0;
+        ChipPoints[] thermoFreqModels = ChipPoints.readChipPoints(new File(fileName));
+        Map<IntervalPolyModel, List<IntervalModel>> result = new LinkedHashMap<>();
+        for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
+            List<IntervalModel> models = new ArrayList<>();
+            for (int chipNo = 0; chipNo < thermoFreqModels.length; chipNo++) {
+                ChipPoints tfm = thermoFreqModels[chipNo];
+                IntervalModel model = null;
+                if (tfm != null) {
+                    double f0 = tfm.getF0();
+                    model = new IntervalModel(ipm, tfm, f0, CC, CF, ic);
+                }
+                models.add(model);
+            }
+            result.put(ipm, models);
+        }
+        return result;
     }
 
     /**
@@ -72,7 +88,8 @@ public class IntervalModel {
      *
      * @param prefix префикс имени t/f0 файлов
      * @param inpsLists наборы, вокруг которых проводились измерения
-     * @param f0 требуемая частота
+     * @param taskLists наборы, из которых ьерутся f0, CC, CF для задачи
+     * оптимизации
      * @param ic интервальный контекст для промежуточных вычислениях в моделях
      * @return отображение из модели вычислителя в масси моделей микросборок
      * @throws IOException
@@ -80,18 +97,23 @@ public class IntervalModel {
     public static Map<IntervalPolyModel, List<IntervalModel>> readTF0Models(
             String prefix,
             List<List<ExtendedInp>> inpsLists,
-            double f0,
+            List<List<ExtendedInp>> taskLists,
             SetIntervalContext ic) throws IOException, ParseException {
-        ChipModel[] thermoFreqModels = ChipRefineF0.readChips(prefix, inpsLists, f0);
-        return makeModels(thermoFreqModels, ic);
-    }
-
-    private static Map<IntervalPolyModel, List<IntervalModel>> makeModels(ChipModel[] thermoFreqModels, SetIntervalContext ic) {
+        ChipModel[] thermoFreqModels = ChipRefineF0.readChips(prefix, inpsLists);
         Map<IntervalPolyModel, List<IntervalModel>> result = new LinkedHashMap<>();
         for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
             List<IntervalModel> models = new ArrayList<>();
-            for (ChipModel tfm : thermoFreqModels) {
-                models.add(tfm != null ? new IntervalModel(ipm, tfm, ic) : null);
+            for (int chipNo = 0; chipNo < thermoFreqModels.length && chipNo < taskLists.size(); chipNo++) {
+                ChipModel tfm = thermoFreqModels[chipNo];
+                IntervalModel model = null;
+                if (tfm != null && !taskLists.get(chipNo).isEmpty()) {
+                    ExtendedInp einp = taskLists.get(chipNo).get(0);
+                    PolyState.Inp inp = einp.inp;
+                    if (!Double.isNaN(einp.f)) {
+                        model = new IntervalModel(ipm, tfm, einp.f, inp.CC, inp.CF, ic);
+                    }
+                }
+                models.add(model);
             }
             result.put(ipm, models);
         }
@@ -117,7 +139,7 @@ public class IntervalModel {
      * @return требуемая частота
      */
     public double getF0() {
-        return thermoFreqModel.getF0();
+        return f0.doubleInf();
     }
 
     /**
@@ -195,7 +217,7 @@ public class IntervalModel {
             }
         }
         SetInterval[] boxAndTemp = Arrays.copyOf(box, box.length + 1);
-        SetInterval maxadf = ic.numsToInterval(0, 0);
+        SetInterval maxAbsDiffFreq = ic.numsToInterval(0, 0);
         for (int i = 0; i < temps.length; i++) {
             int adcOut = temps[i];
             boxAndTemp[box.length] = ic.numsToInterval(adcOut, adcOut);
@@ -206,6 +228,26 @@ public class IntervalModel {
                 if (!u.isMember(up)) {
                     System.out.println("Inp=" + inp.toNom() + " "
                             + up.doubleValue() + " not in [" + u.doubleInf() + "," + u.doubleSup() + "]");
+                    if (polyModel == IntervalPolyModel.SPECIFIED) {
+                        SetIntervalEvaluator ev = SetIntervalEvaluator.create(ic, FunctionsSpecified.getList(),
+                                FunctionsSpecified.xd,
+                                FunctionsSpecified.xs,
+                                FunctionsSpecified.pr2,
+                                FunctionsSpecified.res3,
+                                FunctionsSpecified.res4,
+                                FunctionsSpecified.res5,
+                                FunctionsSpecified.res6,
+                                FunctionsSpecified.u);
+                        SetInterval[] vals = ev.evaluate(boxAndTemp);
+                        System.out.println("xd=" + print(vals[0]));
+                        System.out.println("xs=" + print(vals[1]));
+                        System.out.println("pr2=" + print(vals[2]));
+                        System.out.println("res3=" + print(vals[3]));
+                        System.out.println("res4=" + print(vals[4]));
+                        System.out.println("res5=" + print(vals[5]));
+                        System.out.println("res6=" + print(vals[6]));
+                        System.out.println("u=" + print(vals[7]));
+                    }
                 }
             }
             SetInterval fInf = ic.numsToInterval(
@@ -216,9 +258,9 @@ public class IntervalModel {
                     thermoFreqModel.getUpperModelFfromAdcOut(CC, CF, u.doubleSup(), adcOut));
             SetInterval dfInf = ic.abs(ic.sub(fInf, f0));
             SetInterval dfSup = ic.abs(ic.sub(fSup, f0));
-            maxadf = ic.max(maxadf, ic.max(dfInf, dfSup));
+            maxAbsDiffFreq = ic.max(maxAbsDiffFreq, ic.max(dfInf, dfSup));
         }
-        return ic.mul(maxadf, scale);
+        return ic.mul(maxAbsDiffFreq, scale);
     }
 
     /**
@@ -307,16 +349,18 @@ public class IntervalModel {
         return max;
     }
 
-    private IntervalModel(IntervalPolyModel polyModel, ChipModel thermoFreqModel, SetIntervalContext ic) {
+    private IntervalModel(IntervalPolyModel polyModel, ChipModel thermoFreqModel, double f0, int cc, int cf, SetIntervalContext ic) {
         this.polyModel = polyModel;
         this.thermoFreqModel = thermoFreqModel;
+        this.f0 = ic.numsToInterval(f0, f0);
+        CC = cc;
+        CF = cf;
         this.ic = ic;
         Expression objective = polyModel.getObjective();
         setEv = objective != null
                 ? SetIntervalEvaluator.create(ic, objective.getCodeList(), objective)
                 : null;
-        f0 = ic.numsToInterval(thermoFreqModel.getF0(), thermoFreqModel.getF0());
-        scale = ic.div(ic.numsToInterval(1e6, 1e6), f0);
+        scale = ic.div(ic.numsToInterval(1e6, 1e6), this.f0);
         temp = thermoFreqModel.getAdcOuts();
         Arrays.sort(temp);
 //        exploreINF();
@@ -344,8 +388,12 @@ public class IntervalModel {
             top[0] = ic.numsToInterval(inf, inf);
             SetInterval ppm = eval(top, tmp);
             System.out.println("inf=" + inf + " t0=" + t0 + "[" + tmp[0] + (tmp.length > 1 ? "," + tmp[1] : "") + "] "
-                    + "[" + ppm.doubleInf() + "," + ppm.doubleSup() + "]");
+                    + print(ppm));
         }
+    }
+
+    private static String print(SetInterval x) {
+        return "[" + x.doubleInf() + "," + x.doubleSup() + "]";
     }
 
 }

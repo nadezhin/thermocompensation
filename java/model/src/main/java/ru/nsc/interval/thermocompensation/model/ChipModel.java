@@ -11,7 +11,5 @@ public interface ChipModel {
 
     public int[] getAdcOuts();
 
-    public double getF0();
-
     public static final double CF2CC = 0.034;
 }

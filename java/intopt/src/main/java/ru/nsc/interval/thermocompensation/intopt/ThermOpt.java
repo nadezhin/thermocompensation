@@ -65,11 +65,11 @@ public class ThermOpt {
             for (int i = 0; i < midBox.length; i++) {
                 midBox[i] = ic.numsToInterval(Math.floor(midBox[i].doubleMid()), Math.floor(midBox[i].doubleMid()));
             }
-            double currentSupOfGlobalOptimum = optimizationStep(midBox).getMinDifferenceBtwU();
+            double currentSupOfGlobalOptimum = optimizationStep(midBox).getMaxDifferenceBtwU();
             if (currentSupOfGlobalOptimum < supOfGlobalOptimum) {
                 supOfGlobalOptimum = currentSupOfGlobalOptimum;
                 for (int i = 0; i < result.length; i++) {
-                    result[i] = (int) midBox[i].doubleInf();
+                    result[i] = (int) midBox[i].doubleSup();
                 }
             }
         }
