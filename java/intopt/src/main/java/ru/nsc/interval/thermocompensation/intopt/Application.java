@@ -117,6 +117,8 @@ public class Application {
         System.out.println("Usage: java -ea -Djna.library.path=../lib -jar intoptXXX.jar dir [-sN] [-ideal] [-eD] [-nN] [-g] [-p]");
         System.out.println("  -sN stage N   - N=1 or N=2");
         System.out.println("  -ideal  IDEAL model");
+        System.out.println("  -spec   SPECIFIED model");
+        System.out.println("  -manuf  MANUFACTURED model");
         System.out.println("  -eD value of eps");
         System.out.println("  -nN only chip N");
         System.out.println("  -g gnuplot graphs");
@@ -136,13 +138,17 @@ public class Application {
         for (String arg : args) {
             System.out.print(" " + arg);
             if (arg.startsWith("-")) {
-                if (arg.startsWith("-s")) {
+                if (arg.equals("-ideal")) {
+                    ipm = IntervalPolyModel.IDEAL;
+                } else if (arg.equals("-spec")) {
+                    ipm = IntervalPolyModel.SPECIFIED;
+                } else if (arg.equals("-manuf")) {
+                    ipm = IntervalPolyModel.MANUFACTURED;
+                } else if (arg.startsWith("-s")) {
                     stage = Integer.parseInt(arg.substring(2));
                     if (stage < 1 || stage > 2) {
                         help();
                     }
-                } else if (arg.equals("-ideal")) {
-                    ipm = IntervalPolyModel.IDEAL;
                 } else if (arg.startsWith("-e")) {
                     eps = Double.parseDouble(arg.substring(2));
                 } else if (arg.startsWith("-n")) {
