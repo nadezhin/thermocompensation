@@ -636,6 +636,10 @@ public class PolyModel {
                 oldP2 = newP2;
             }
         }
+        if (DEBUG >= 1) {
+            System.out.println("product=" + Long.toString(newR, 16) + "(" + (newR & 0x7FFFFFFFFL) + ")"
+                    + " p1=" + oldP1 + " p2=" + oldP2);
+        }
         return new ProductResult(newR, oldP1, oldP2);
     }
 
@@ -1126,13 +1130,15 @@ public class PolyModel {
         } else {
             inps = Arrays.asList(Arrays.asList(PolyState.Inp.genNom()));
         }
+        DEBUG = 1;
         for (int chipNo = 0; chipNo < inps.size(); chipNo++) {
             List<PolyState.Inp> inps1 = inps.get(chipNo);
             for (PolyState.Inp inp : inps1) {
                 System.out.println((chipNo + 1) + ":" + inp.toNom());
-                int[] dacInps = computeAll(inp);
-                for (int adcOut = 0; adcOut < dacInps.length; adcOut++) {
-                    System.out.println("\t" + adcOut + "\t" + dacInps[adcOut]);
+                for (int adcOut = 0; adcOut < 4096; adcOut++) {
+                    inp.T = adcOut;
+                    int dacInp = compute(inp, true);
+                    System.out.println("\t" + adcOut + "\t" + dacInp);
                 }
             }
         }
