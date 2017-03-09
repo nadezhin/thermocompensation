@@ -332,7 +332,7 @@
   (cond ((and (not (= (|POLY-ST->EN_trig| st) 0))
               (= (|POLY-ST->CNTS| st) 0)
               (= (|POLY-ST->CNTM| st) 0))
-         (bool->bit (= (|POLY-ST->CNTM| st) 6)))
+         (bool->bit (= (|POLY-ST->CNTP| st) 6)))
         ((= (|POLY-ST->EN_trig| st) 0)
          0)
         (t (|POLY-ST->DONE| st))))
@@ -410,9 +410,9 @@
 (define |Pin|
   ((st poly-st-p))
   :returns (Pin unsigned-1-p)
-  (bool->bit (if (= (|POLY-ST->CNTS| st) 12)
-                 (|m| st)
-               (|POLY-ST->P| st))))
+  (if (= (|POLY-ST->CNTS| st) 12)
+      (|m| st)
+    (|POLY-ST->P| st)))
 
 (define |S|
   ((st poly-st-p))
@@ -429,7 +429,7 @@
           (b-ior
            (b-and (|S1in| st) (b-and (b-not (|S2in| st)) (|Pin| st)))
            (b-ior
-            (b-and (|S1in| st) (b-and (|S2in| st) (b-not (|Pin| st))))
+            (b-and (b-not (|S1in| st)) (b-and (|S2in| st) (|Pin| st)))
             (b-and (|S1in| st) (b-and (|S2in| st) (|Pin| st)))))))
         ((= (|EN| st) 0)
          0)
@@ -477,14 +477,14 @@
      (t 0)))
    ((= (|POLY-ST->CNTP| st) 5)
     (cond
-     ((= (|POLY-ST->CNTM| st) (+ 34 10 -13 -3)) (b-not (logbit 0 (|POLY-IN->K1BIT| in))))
-     ((= (|POLY-ST->CNTM| st) (+ 33 10 -13 -3)) (b-not (logbit 1 (|POLY-IN->K1BIT| in))))
-     ((= (|POLY-ST->CNTM| st) (+ 32 10 -13 -3)) (b-not (logbit 2 (|POLY-IN->K1BIT| in))))
-     ((= (|POLY-ST->CNTM| st) (+ 31 10 -13 -3)) (b-not (logbit 3 (|POLY-IN->K1BIT| in))))
-     ((= (|POLY-ST->CNTM| st) (+ 30 10 -13 -3)) (b-not (logbit 4 (|POLY-IN->K1BIT| in))))
-     ((= (|POLY-ST->CNTM| st) (+ 29 10 -13 -3)) (b-not (logbit 5 (|POLY-IN->K1BIT| in))))
-     ((= (|POLY-ST->CNTM| st) (+ 28 10 -13 -3)) (b-not (logbit 6 (|POLY-IN->K1BIT| in))))
-     ((= (|POLY-ST->CNTM| st) (+ 27 10 -13 -3)) (b-not (logbit 7 (|POLY-IN->K1BIT| in))))
+     ((= (|POLY-ST->CNTM| st) (+ 34 10 -13 -4)) (b-not (logbit 0 (|POLY-IN->K1BIT| in))))
+     ((= (|POLY-ST->CNTM| st) (+ 33 10 -13 -4)) (b-not (logbit 1 (|POLY-IN->K1BIT| in))))
+     ((= (|POLY-ST->CNTM| st) (+ 32 10 -13 -4)) (b-not (logbit 2 (|POLY-IN->K1BIT| in))))
+     ((= (|POLY-ST->CNTM| st) (+ 31 10 -13 -4)) (b-not (logbit 3 (|POLY-IN->K1BIT| in))))
+     ((= (|POLY-ST->CNTM| st) (+ 30 10 -13 -4)) (b-not (logbit 4 (|POLY-IN->K1BIT| in))))
+     ((= (|POLY-ST->CNTM| st) (+ 29 10 -13 -4)) (b-not (logbit 5 (|POLY-IN->K1BIT| in))))
+     ((= (|POLY-ST->CNTM| st) (+ 28 10 -13 -4)) (b-not (logbit 6 (|POLY-IN->K1BIT| in))))
+     ((= (|POLY-ST->CNTM| st) (+ 27 10 -13 -4)) (b-not (logbit 7 (|POLY-IN->K1BIT| in))))
      (t 1)))
    ((= (|POLY-ST->CNTP| st) 6)
     (cond
@@ -794,7 +794,9 @@
                  (logior (ash (|S| st) 12)
                          (ash (|S| st) 11)
                          (ash (|POLY-ST->WORK| st) -2)))
-                (t 0)))
+                ((and (= (|POLY-ST->CNTS| st) 0)
+                      (= (|POLY-ST->CNTM| st) 0))
+                 0)))
          (t (|POLY-ST->WORK| st)))))
 
 (define |RESULTout-NEXT|
@@ -805,7 +807,7 @@
    (if (not (= (|POLY-ST->DONE| st) 0))
        (cond ((logbitp 34 (|POLY-ST->RESULT| st))
               #x000)
-             ((not (= (logand (|POLY-ST->RESULT| st)) #x3FFFFF000))
+             ((not (= (logand (|POLY-ST->RESULT| st) #x3FFFFF000) 0))
               #xFFF)
              (t (logand (|POLY-ST->RESULT| st) #xFFF)))
      (|POLY-ST->RESULTout| st))))
@@ -823,8 +825,8 @@
    :|P|              (|P-NEXT| st)
    :|P1|             (|P1-NEXT| st in fixbug)
    :|P2|             (|P2-NEXT| st in fixbug)
-   :|RESULTn_1|      (|POLY-ST->RESULTn_1| st)
-   :|RESULTn_2|      (|POLY-ST->RESULTn_2| st)
+   :|RESULTn_1|      (|RESULTn_1-NEXT| st)
+   :|RESULTn_2|      (|RESULTn_2-NEXT| st)
    :|CNTP|           (|POLY-ST->CNTP| st)
    :|CNTS|           (|POLY-ST->CNTS| st)
    :|CNTM|           (|POLY-ST->CNTM| st)
@@ -838,4 +840,11 @@
    :|ENshift_trig3|  (|POLY-ST->ENshift_trig2| st)
    :|ENshift_trig4|  (|POLY-ST->ENshift_trig3| st)
    :|EN_trig|        (|EN| st)))
+
+(define clk
+  ((st poly-st-p)
+   (in poly-in-p)
+   (fixbug booleanp))
+  :returns (st poly-st-p)
+  (negedge (posedge st in fixbug)))
 
