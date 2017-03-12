@@ -548,6 +548,8 @@ public class PolyModel {
             int cntm = cntm0 - i;
             long oldPartial = acc0 + mult * xs;
             long oldAcc = oldPartial >> i;
+            long rest = r - mult;
+            assert rest == (i == 0 ? r : (r + (1L << (i - 1)) >> i << i));
             mult += ((long) mults[i]) << i;
             if (DEBUG >= 2) {
                 System.out.println("oldAcc=" + Long.toString(oldAcc, 16));
@@ -565,6 +567,12 @@ public class PolyModel {
             int newP1 = fixBugP && cntm == 0 ? 0 : (((newProd & mask) + (a1 & mask) + prevP1) & ~mask) != 0 ? 1 : 0;
             int newP2 = fixBugP && cntm == 0 ? 0 : (((newS1 & mask) + (a2 & mask) + prevP2) & ~mask) != 0 ? 1 : 0;
             int entrig = cntp == 0 && cntm == 34 ? 0 : 1;
+            assert newR == (s1.RESULT >> (35 - i))
+                    + (((long) (s1.P1 + s1.P2)) << i)
+                    + (((long) a1) >> i << i)
+                    + (((long) a2) >> i << i)
+                    + (((long) s1.WORK) << 51 >> (51 - i))
+                    + rest * xs;
             partialSum(entrig, cntp, cntm, cntd, (int) oldAcc,
                     oldXs, mults[i],
                     oldRes, newRes,
@@ -590,6 +598,7 @@ public class PolyModel {
             int newRes2 = 0;
             int newP1 = fixBugP ? 0 : (((newAcc & 1) + oldP1) & ~1) != 0 ? 1 : 0;
             int newP2 = fixBugP ? 0 : ((((newAcc + oldP1) & 1) + oldP2) & ~1) != 0 ? 1 : 0;
+            assert (newR == s1.RESULT + (((long) s1.WORK) << 51 >> (51 - 35)));
             partialSum(1, cntp, 0, 0, (int) oldAcc,
                     xs, mult1,
                     oldRes, newRes,
@@ -622,6 +631,9 @@ public class PolyModel {
                 int newP1 = fixBugP && cntm == 0 ? 0 : (((newProd & mask) + (a1 & mask) + prevP1) & ~mask) != 0 ? 1 : 0;
                 int newP2 = fixBugP && cntm == 0 ? 0 : (((newS1 & mask) + (a2 & mask) + prevP2) & ~mask) != 0 ? 1 : 0;
                 int entrig = cntp == 0 && cntm == 34 ? 0 : 1;
+                assert (((newR >> (i - 35)) & 0x7FFFFFFFFL)
+                        == ((s1.RESULT + (((long) s1.WORK) << 51 >> (51 - 35))) & 0x7FFFFFFFFL));
+
                 partialSum(entrig, cntp, cntm, cntd, (int) oldAcc,
                         oldXs, 0/*
                          * mults[i]
@@ -640,6 +652,12 @@ public class PolyModel {
             System.out.println("product=" + Long.toString(newR, 16) + "(" + (newR & 0x7FFFFFFFFL) + ")"
                     + " p1=" + oldP1 + " p2=" + oldP2);
         }
+        if (cntp == 1) {
+            assert s1.XS == ((((long) newR) >> 5) & 0x1FFF);
+        } else {
+            assert ((newR >> cntd) & 0x7FFFFFFFFL) == s1.RESULT;
+        }
+
         return new ProductResult(newR, oldP1, oldP2);
     }
 
@@ -1130,14 +1148,14 @@ public class PolyModel {
         } else {
             inps = Arrays.asList(Arrays.asList(PolyState.Inp.genNom()));
         }
-        DEBUG = 1;
+        DEBUG = 0;
         for (int chipNo = 0; chipNo < inps.size(); chipNo++) {
             List<PolyState.Inp> inps1 = inps.get(chipNo);
             for (PolyState.Inp inp : inps1) {
                 System.out.println((chipNo + 1) + ":" + inp.toNom());
                 for (int adcOut = 0; adcOut < 4096; adcOut++) {
                     inp.T = adcOut;
-                    int dacInp = compute(inp, true);
+                    int dacInp = compute(inp, true, false);
                     System.out.println("\t" + adcOut + "\t" + dacInp);
                 }
             }
