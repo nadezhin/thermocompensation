@@ -63,7 +63,7 @@ public enum IntervalPolyModel {
     MANUFACTURED {
         @Override
         public Expression getObjective() {
-            return null;
+            return FunctionsManufactured.getObjective();
         }
 
         @Override
