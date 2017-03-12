@@ -145,8 +145,12 @@
      (equal (|POLY-ST->P|         nst) (|POLY-ST->P| st))
      (equal (|POLY-ST->P1|        nst) (|POLY-ST->P1| st))
      (equal (|POLY-ST->P2|        nst) (|POLY-ST->P2| st))
-     (equal (|POLY-ST->RESULTn_1| nst) (|POLY-ST->RESULTn_1| st))
-     (equal (|POLY-ST->RESULTn_2| nst) (|POLY-ST->RESULTn_2| st))
+     (equal (|POLY-ST->RESULTn_1| nst) (if (= (|POLY-ST->ENshift_trig4| st) 1)
+                                           (logbit 0 (|POLY-ST->RESULT| st))
+                                         (|POLY-ST->RESULTn_1| st)))
+     (equal (|POLY-ST->RESULTn_2| nst) (if (= (|POLY-ST->ENshift_trig4| st) 1)
+                                           (|POLY-ST->RESULTn_1| st)
+                                         (|POLY-ST->RESULTn_2| st)))
      (equal (|POLY-ST->CNTP|      nst) (if (and (= (|POLY-ST->CNTS| st) 0)
                                                 (= (|POLY-ST->CNTM| st) 0))
                                            (loghead 3 (1+ (|POLY-ST->CNTP| st)))
@@ -185,11 +189,17 @@
     :enable |P2-NEXT|)
   (defrule RESULTn_1-lemma
     (implies (and (equal (|EN| st) 1) (equal (|POLY-ST->DONE| st) 1))
-             (equal (|RESULTn_1-NEXT| st) (|POLY-ST->RESULTn_1| st)))
+             (equal (|RESULTn_1-NEXT| st)
+                    (if (= (|POLY-ST->ENshift_trig4| st) 1)
+                        (logbit 0 (|POLY-ST->RESULT| st))
+                      (|POLY-ST->RESULTn_1| st))))
     :enable |RESULTn_1-NEXT|)
   (defrule RESULTn_2-lemma
     (implies (and (equal (|EN| st) 1) (equal (|POLY-ST->DONE| st) 1))
-             (equal (|RESULTn_2-NEXT| st) (|POLY-ST->RESULTn_2| st)))
+             (equal (|RESULTn_2-NEXT| st)
+                    (if (= (|POLY-ST->ENshift_trig4| st) 1)
+                        (|POLY-ST->RESULTn_1| st)
+                      (|POLY-ST->RESULTn_2| st))))
     :enable |RESULTn_2-NEXT|)
   (defrule CNTP-lemma
     (implies (and (equal (|POLY-ST->EN_trig| st) 1) (equal (|POLY-ST->DONE| st) 1))
@@ -237,7 +247,7 @@
      (equal (|POLY-ST->RESULT|    nst) (|POLY-ST->RESULT| st))
      (equal (|POLY-ST->WORK|      nst) (loghead
                                         13
-                                        (logior (ash (|S| st) 12)
+                                        (logior (ash (|S_| st) 12)
                                                 (ash (|POLY-ST->WORK| st) -1))))
      (equal (|POLY-ST->P|         nst) (b-ior
                                         (b-and (|S1in| st) (b-and (|S2in| st) (b-not (|Pin| st))))
@@ -280,7 +290,7 @@
              (equal (|WORK-NEXT| st in)
                     (loghead
                      13
-                     (logior (ash (|S| st) 12)
+                     (logior (ash (|S_| st) 12)
                              (ash (|POLY-ST->WORK| st) -1)))))
     :enable |WORK-NEXT|)
   (defrule P-lemma
