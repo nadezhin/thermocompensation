@@ -202,12 +202,15 @@ f0*(1-ppm) <= f_inf(T_i,u(T_i,K),c) <= f <= f_sup(T_i,u(T_i,K),c) <= f0*(1+ppm)
 ppm >= -(f_inf(T_i,u(T_i,K),c)-f0)/f0
 ppm >= (f_sup(T-i,u(T_i.K),c)-f0)/f0 .
 Минимальное ppm. удовлетворяющее всем ограничением, есть
-ppm = max( ppm_1, .., ppm_i, ... ),
+ppm(K,c) = max( ppm_1(K,c), .., ppm_i(K,c), ... ),
 где
-ppm_i = max ( f0-ff_inf(T_i,u(T_i,K),c) , ff_sup(T_i,u(T_i,K),c)-f0 ) / f0
-      = max ( abs(ff_inf(T_i,u(T_i,K),c)-f0) , abs(ff_sup(T_i,u(T_i,K),c)-f0) ) / f0
+ppm_i(K,c) = max ( f0-ff_inf(T_i,u(T_i,K),c) , ff_sup(T_i,u(T_i,K),c)-f0 ) / f0
+           = max ( abs(ff_inf(T_i,u(T_i,K),c)-f0) , abs(ff_sup(T_i,u(T_i,K),c)-f0) ) / f0
 
 
-Необходимо подобрать K и c, при котором ppm минимально.
+Необходимо подобрать K и c, при котором ppm минимально,
+то есть ppm(K,c) - целевая функция задачи оптимизации.
+Пока можно полагать, что переменная c задаётмя заказчиком, то есть оптимизация
+ведётся по вектору K.
 
 В случае упрощенной модели ppm_i = abs(u(T_i,K) - u_i)/f0 .
