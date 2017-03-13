@@ -76,12 +76,15 @@ u = max(0, min(4095, res6)),
 
 где p0, p1, p2, p3, p4, p5 - сложные целочисленные функции коэффициентов и температуры,
 содержащиеся в интервалах
-p0(T,INFBIT,SBIT)=((8*INFBIT<=T & T<1535+8*INFBIT) ? 0 : 1) in [0,1]
-p1(T,INFBIT,SBIT) in [0,2]
-p2(T,INFBIT,SBIT,K5BIT,K4BIT) in [0,2]
-p3(T,INFBIT,SBIT,K5BIT,K4BIT,K3BIT) in [0,2]
-p4(T,INFBIT,SBIT,K5BIT,K4BIT,K3BIT,K2BIT) in [0,2]
+p0(T,INFBIT,SBIT)                               in [0,1]
+p1(T,INFBIT,SBIT)                               in [0,1]
+p2(T,INFBIT,SBIT,K5BIT,K4BIT)                   in [0,2]
+p3(T,INFBIT,SBIT,K5BIT,K4BIT,K3BIT)             in [0,1]
+p4(T,INFBIT,SBIT,K5BIT,K4BIT,K3BIT,K2BIT)       in [0,1]
 p5(T,INFBIT,SBIT,K5BIT,K4BIT,K3BIT,K2BIT,K1BIT) in [0,2] .
+Для p0 и p1 есть явные выражения:
+p0(T,INFBIT,SBIT)=((8*INFBIT<=T & T<1535+8*INFBIT) ? 0 : 1)
+p1(T,INFBIT,SBIT)=((SBIT==16 & T==1534+8*INFBIT) ? 1 : 0);
 
 Если приближённо заменить floor(z + 0.5) на z, ввести обозначения
 МОДЕЛЬ ИДЕАЛИЗИРОВАННАЯ
