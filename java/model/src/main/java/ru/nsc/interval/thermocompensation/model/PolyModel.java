@@ -932,8 +932,11 @@ public class PolyModel {
         long uprodf = ((inp.T - (inp.INF << 3)) & ((1L << 35) - 1))
                 + ((1L << 35) - 1535);
         long prodf = uprodf << (64 - 35) >> (64 - 35);
-        int pf = (int) (uprodf >> 35);
+        int pf = fixBugP ? 0 : (int) (uprodf >> 35);
         assert 0 <= pf && pf <= 1;
+        assert pf == (fixBugP
+                || inp.T >= (inp.INF << 3)
+                && inp.T < 1535 + (inp.INF << 3) ? 0 : 1);
         assert prodf == inp.T - (1535 + (inp.INF << 3));;
         assert prodf >= -1535 - 63 * 8 && prodf <= 4095 - 1535;
         assert prodf >= -2039 && prodf <= 2560;
@@ -944,111 +947,55 @@ public class PolyModel {
                 + 16
                 + pf;
         long prods = uprods << (64 - 36) >> (64 - 36);
-        int ps = (int) (uprods >> 36);
+        int ps = fixBugP ? 0 : (int) (uprods >> 36);
         assert 0 <= ps && ps <= 1;
+        assert ps == (!fixBugP && inp.SBIT == 16 && inp.T == 1534 + (inp.INF << 8) ? 1 : 0);
         assert -95817 <= prods && prods <= 120337;
         int xs = (int) (prods >> 5);
         assert xs == computeXs(inp.INF, inp.SBIT, inp.T, fixBugP);
         assert xs >= -0x1000 && xs < 0x1000;
         assert xs >= -2995 && xs <= 3760;
+
         long uprod2 = ((inp.K5BIT * xs) & ((1L << 35) - 1))
                 + ((long) inp.K4BIT << 9)
                 + ((1L << 35) - (25L << 9))
                 + ps;
         long prod2 = uprod2 << (64 - 35) >> (64 - 35);
-        int p2 = (int) (uprod2 >> 35);
+        int p2 = fixBugP ? 0 : (int) (uprod2 >> 35);
         assert 0 <= p2 && p2 <= 2;
-        assert prod2 >= -2995 * 15 - (25L << 9) && prod2 <= 3760 * 15 + ((31 - 25) << 9);
-        if (xs >= 0) {
-            assert prod2 >= -(25L << 9) && prod2 <= 3760 * 15 + ((31 - 25) << 9);
-            assert prod2 >= -12800 && prod2 <= 59472;
-        }
-        if (xs <= 0) {
-            assert prod2 >= (-2995) * 15 - (25L << 9) && prod2 <= ((31 - 25) << 9) + 2;
-            assert prod2 >= -57725 && prod2 <= 3074;
-        }
-        assert prod2 >= -57725 && prod2 <= 59472;
+
         long uprod3 = ((prod2 * xs) & ((1L << 45) - 1))
                 + (((long) inp.K3BIT) << 19)
                 + (1L << 9) + (1L << 22)
                 + p2;
         long prod3 = uprod3 << (64 - 45) >> (64 - 45);
-        int p3 = (int) (uprod3 >> 45);
+        int p3 = fixBugP ? 0 : (int) (uprod3 >> 45);
         assert 0 <= p3 && p3 <= 1;
         long res3 = prod3 >> 10;
-        if (xs >= 0) {
-            assert prod3 >= 3760 * (-12800L) + (1L << 9) + (1L << 22) && prod3 <= 3760 * 59472L + (31L << 19) + (1L << 9) + (1L << 22) + 1;
-            assert prod3 >= -43933184L && prod3 <= 244062465L;
-            assert res3 >= -42904L && res3 <= 238342L;
-        }
-        if (xs <= 0) {
-            assert prod3 >= (-2995) * 3074 + (1L << 9) + (1L << 22) && prod3 <= (-2995) * (-57725) + (31L << 19) + (1L << 9) + (1L << 22) + 2;
-            assert prod3 >= -5011814L && prod3 <= 193334121L;
-            assert res3 >= -4895L && res3 <= 188802L;
-        }
-        assert prod3 >= -43933184L && prod3 <= 244062465L;
-        assert res3 >= -42904L && res3 <= 238342L;
+
         long uprod4 = ((res3 * xs) & ((1L << 45) - 1))
                 + (((long) inp.K2BIT) << 17)
                 + (1L << 9) + (5L << 19)
                 + p3;
         long prod4 = uprod4 << (64 - 45) >> (64 - 45);
-        int p4 = (int) (uprod4 >> 45);
+        int p4 = fixBugP ? 0 : (int) (uprod4 >> 45);
         assert 0 <= p4 && p4 <= 1;
         long res4 = prod4 >> 10;
-        if (xs >= 0) {
-            assert prod4 >= 3760 * (-42904L) + (1L << 9) + (5L << 19) && prod4 <= 3760 * 238342L + (127L << 17) + (1L << 9) + (5L << 19) /*
-                     * + 2
-                     */;
-            assert prod4 >= -158697088L && prod4 <= 915434016L;
-            assert res4 >= -154978L && res4 <= 893978L;
-        }
-        if (xs <= 0) {
-            assert prod4 >= (-2995) * 188802L + (1L << 9) + (5L << 19) && prod4 <= (-2995) * (-4895L) + (127L << 17) + (1L << 9) + (5L << 19) + 2;
-            assert prod4 >= -562840038L && prod4 <= 33928623L;
-            assert res4 >= -549649L && res4 <= 33133L;
-        }
-        assert prod4 >= -562840038L && prod4 <= 915434016L;
-        assert res4 >= -549649L && res4 <= 893978L;
+
         long uprod5 = ((res4 * xs) & ((1L << 45) - 1))
                 + (((~(((long) inp.K1BIT) << 17)) & ((1L << 45) - 1))
                 + ((1L << 45) - (195L << 16)))
                 + p4;
         long prod5 = uprod5 << (64 - 45) >> (64 - 45);
-        int p5 = (int) (uprod5 >> 45);
+        int p5 = fixBugP ? 0 : (int) (uprod5 >> 45);
         assert 0 <= p5 && p5 <= 2;
         long res5 = prod5 >> 10;
-        if (xs >= 0) {
-            assert prod5 >= 3760 * (-154978L) + (-255L << 17) - 1 + (-195L << 16) && prod5 <= 3760 * 893978L - 1 + (-195L << 16) /*
-                     * + 2
-                     */;
-            assert prod5 >= -628920161L && prod5 <= 3348577759L;
-            assert res5 >= -614180L && res5 <= 3270095L;
-        }
-        if (xs <= 0) {
-            assert prod5 >= (-2995) * 33133L + (-255L << 17) - 1 + (-195L << 16) && prod5 <= (-2995) * (-549649L) - 1 + (-195L << 16) + 2;
-            assert prod5 >= -145436216L && prod5 <= 1633419236L;
-            assert res5 >= -142028L && res5 <= 1595135L;
-        }
-        assert prod5 >= -628920161L && prod5 <= 3348577759L;
-        assert res5 >= -614180L && res5 <= 3270095L;
+
         long uprod6 = ((res5 * xs) & ((1L << 49) - 1))
                 + (1L << 13) + (1032L << 14) + p5;
         long prod6 = uprod6 << (64 - 49) >> (64 - 49);
         long res6 = prod6 >> 14;
-        assert res6 == uprod6 << (64 - 49) >> (64 - 35);
-        if (xs >= 0) {
-            assert prod6 >= 3760 * (-614180L) + (1L << 13) + (1032L << 14) && prod6 <= 3760 * 3270095L + (1L << 13) + (1032L << 14) + 2;
-            assert prod6 >= -2292400320L && prod6 <= 12312473682L;
-            assert res6 >= -139918L && res6 <= 751493L;
-        }
-        if (xs <= 0) {
-            assert prod6 >= (-2995) * 1595135L + (1L << 13) + (1032L << 14) && prod6 <= (-2995) * (-142028L) + (1L << 13) + (1032L << 14) + 2;
-            assert prod6 >= -4760512845L && prod6 <= 442290342L;
-            assert res6 >= -290559L && res6 <= 26995L;
-        }
-        assert prod6 >= -4760512845L && prod6 <= 12312473682L;
-        assert res6 >= -290559L && res6 <= 751493L;
+
         int resultOut = (res6 < 0 ? 0 : res6 >= (1L << 12) ? 4095 : (int) res6);
         if (check) {
             PolyModel pm = computePolyModel(inp, fixBugP);
