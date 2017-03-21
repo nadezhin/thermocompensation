@@ -1,12 +1,19 @@
 package ru.nsc.interval.thermocompensation.intopt;
 
+import java.util.Arrays;
 import java.util.PriorityQueue;
 import net.java.jinterval.interval.set.SetInterval;
 import net.java.jinterval.interval.set.SetIntervalContext;
+import net.java.jinterval.interval.set.SetIntervalEvaluator;
 import net.java.jinterval.interval.set.SetIntervalOps;
 import ru.nsc.interval.thermocompensation.model.PolyState;
 
 public class ThermOpt2 {
+
+    /**
+     * Check that point model is within interval model
+     */
+    private static final boolean CHECK_POINT_WITHIN_INTERVAL = true;
 
     PriorityQueue<ResultHolderElement> resultHolder = new PriorityQueue<>(new DifferenceComparator());
     private final SetInterval[] initialBox;
@@ -28,6 +35,26 @@ public class ThermOpt2 {
     }
 
     void updateRecord(PolyState.Inp inp) {
+        double pObjective = im.evalMaxPpm(inp);
+        if (CHECK_POINT_WITHIN_INTERVAL) {
+            checkPointWithinInterval(inp, pObjective);
+        }
+
+        if (pObjective < supOfGlobalOptimum) {
+            supOfGlobalOptimum = pObjective;
+            for (int i = 0; i < result.length; i++) {
+                result[0] = inp.INF;
+                result[1] = inp.SBIT;
+                result[2] = inp.K1BIT;
+                result[3] = inp.K2BIT;
+                result[4] = inp.K3BIT;
+                result[5] = inp.K4BIT;
+                result[6] = inp.K5BIT;
+            }
+        }
+    }
+
+    private void checkPointWithinInterval(PolyState.Inp inp, double pObjective) {
         SetInterval[] midBox = initialBox.clone();
         midBox[0] = ic.numsToInterval(inp.INF, inp.INF);
         midBox[1] = ic.numsToInterval(inp.SBIT, inp.SBIT);
@@ -36,17 +63,52 @@ public class ThermOpt2 {
         midBox[4] = ic.numsToInterval(inp.K3BIT, inp.K3BIT);
         midBox[5] = ic.numsToInterval(inp.K4BIT, inp.K4BIT);
         midBox[6] = ic.numsToInterval(inp.K5BIT, inp.K5BIT);
-        for (int i = 0; i < midBox.length; i++) {
-            midBox[i] = ic.numsToInterval(Math.floor(midBox[i].doubleMid()), Math.floor(midBox[i].doubleMid()));
-        }
-        double currentSupOfGlobalOptimum = optimizationStep(midBox).getMaxDifferenceBtwU();
-        if (currentSupOfGlobalOptimum < supOfGlobalOptimum) {
-            supOfGlobalOptimum = currentSupOfGlobalOptimum;
-            for (int i = 0; i < result.length; i++) {
-                result[i] = (int) midBox[i].doubleSup();
-            }
+        SetInterval iObjective = im.eval(midBox);
+        if (iObjective.isMember(pObjective)) {
+            return;
         }
 
+        System.out.println("Inp=" + inp.toNom() + " "
+                + pObjective + " not in " + IntervalModel.print(iObjective));
+        SetIntervalEvaluator ev;
+        switch (im.getPolyModel()) {
+            case SPECIFIED:
+                ev = SetIntervalEvaluator.create(ic,
+                        FunctionsSpecified.getList(),
+                        FunctionsSpecified.xd,
+                        FunctionsSpecified.xs,
+                        FunctionsSpecified.pr2,
+                        FunctionsSpecified.res3,
+                        FunctionsSpecified.res4,
+                        FunctionsSpecified.res5,
+                        FunctionsSpecified.res6,
+                        FunctionsSpecified.u);
+                break;
+            case MANUFACTURED:
+                ev = SetIntervalEvaluator.create(ic,
+                        FunctionsManufactured.getList(),
+                        FunctionsManufactured.xd,
+                        FunctionsManufactured.xs,
+                        FunctionsManufactured.pr2,
+                        FunctionsManufactured.res3,
+                        FunctionsManufactured.res4,
+                        FunctionsManufactured.res5,
+                        FunctionsManufactured.res6,
+                        FunctionsManufactured.u);
+                break;
+            default:
+                ev = null;
+        }
+        SetInterval[] boxAndTemp = Arrays.copyOf(midBox, midBox.length + 1);
+        SetInterval[] vals = ev.evaluate(boxAndTemp);
+        System.out.println("xd=" + IntervalModel.print(vals[0]));
+        System.out.println("xs=" + IntervalModel.print(vals[1]));
+        System.out.println("pr2=" + IntervalModel.print(vals[2]));
+        System.out.println("res3=" + IntervalModel.print(vals[3]));
+        System.out.println("res4=" + IntervalModel.print(vals[4]));
+        System.out.println("res5=" + IntervalModel.print(vals[5]));
+        System.out.println("res6=" + IntervalModel.print(vals[6]));
+        System.out.println("u=" + IntervalModel.print(vals[7]));
     }
 
     private ResultHolderElement optimizationStep(SetInterval[] box) {
@@ -86,28 +148,17 @@ public class ThermOpt2 {
                 secondBox[numbOfWidest] = ic.numsToInterval(intvalInf, intvalSup);
                 resultHolder.add(optimizationStep(secondBox));
             }
-            SetInterval[] midBox = currentBox.clone();
-            for (int i = 0; i < midBox.length; i++) {
-                midBox[i] = ic.numsToInterval(Math.floor(midBox[i].doubleMid()), Math.floor(midBox[i].doubleMid()));
+            int[] midPoint = new int[currentBox.length];
+            for (int i = 0; i < midPoint.length; i++) {
+                midPoint[i] = (int) Math.floor(currentBox[i].doubleMid());
             }
-            double currentSupOfGlobalOptimum = optimizationStep(midBox).getMaxDifferenceBtwU();
-            if (currentSupOfGlobalOptimum < supOfGlobalOptimum) {
-                supOfGlobalOptimum = currentSupOfGlobalOptimum;
-                for (int i = 0; i < result.length; i++) {
-                    result[i] = (int) midBox[i].doubleSup();
-                }
-            }
+            updateRecord(im.pointAsInp(midPoint));
         }
         for (int i = 0; i < result.length; i++) {
             System.out.print(result[i] + " ");
         }
         System.out.print("min " + resultHolder.peek().getMinDifferenceBtwU());
         System.out.println(" max " + supOfGlobalOptimum);
-        /*for (int i = 0; i < result.length; i++) {
-            System.out.print("[" + resultHolder.peek().getRecordBox()[i].doubleInf() + ", " + resultHolder.peek().getRecordBox()[i].doubleSup() + "] ");
-        }
-        System.out.print("min " + resultHolder.peek().getMinDifferenceBtwU());
-        System.out.println(" max " + resultHolder.poll().getMaxDifferenceBtwU());*/
         return result;
     }
 }

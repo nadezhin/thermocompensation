@@ -26,11 +26,6 @@ import ru.nsc.interval.thermocompensation.model.PolyState;
 public class IntervalModel {
 
     /**
-     * Check that point model is within interval model.
-     */
-    private static final boolean CHECK_MODELS = false;
-
-    /**
      * Модель вычислителя.
      */
     private final IntervalPolyModel polyModel;
@@ -203,57 +198,12 @@ public class IntervalModel {
      * @return интервальная оценка критерия
      */
     public SetInterval eval(SetInterval[] box, int[] temps) {
-        PolyState.Inp inp = null;
-        if (CHECK_MODELS) {
-            boolean isSingleton = true;
-            for (SetInterval b : box) {
-                isSingleton = isSingleton && b.isSingleton();
-            }
-            if (isSingleton) {
-                inp = PolyState.Inp.genNom();
-                inp.INF = (int) box[0].doubleInf();
-                inp.SBIT = (int) box[1].doubleInf();
-                inp.K1BIT = (int) box[2].doubleInf();
-                inp.K2BIT = (int) box[3].doubleInf();
-                inp.K3BIT = (int) box[4].doubleInf();
-                inp.K4BIT = (int) box[5].doubleInf();
-                inp.K5BIT = (int) box[6].doubleInf();
-            }
-        }
         SetInterval[] boxAndTemp = Arrays.copyOf(box, box.length + 1);
         SetInterval maxAbsDiffFreq = ic.numsToInterval(0, 0);
         for (int i = 0; i < temps.length; i++) {
             int adcOut = temps[i];
             boxAndTemp[box.length] = ic.numsToInterval(adcOut, adcOut);
             SetInterval u = setEv.evaluate(boxAndTemp)[0];
-            if (inp != null) {
-                inp.T = adcOut;
-                Rational up = polyModel.evalPoint(inp);
-                if (!u.isMember(up)) {
-                    System.out.println("Inp=" + inp.toNom() + " "
-                            + up.doubleValue() + " not in [" + u.doubleInf() + "," + u.doubleSup() + "]");
-                    if (polyModel == IntervalPolyModel.SPECIFIED) {
-                        SetIntervalEvaluator ev = SetIntervalEvaluator.create(ic, FunctionsSpecified.getList(),
-                                FunctionsSpecified.xd,
-                                FunctionsSpecified.xs,
-                                FunctionsSpecified.pr2,
-                                FunctionsSpecified.res3,
-                                FunctionsSpecified.res4,
-                                FunctionsSpecified.res5,
-                                FunctionsSpecified.res6,
-                                FunctionsSpecified.u);
-                        SetInterval[] vals = ev.evaluate(boxAndTemp);
-                        System.out.println("xd=" + print(vals[0]));
-                        System.out.println("xs=" + print(vals[1]));
-                        System.out.println("pr2=" + print(vals[2]));
-                        System.out.println("res3=" + print(vals[3]));
-                        System.out.println("res4=" + print(vals[4]));
-                        System.out.println("res5=" + print(vals[5]));
-                        System.out.println("res6=" + print(vals[6]));
-                        System.out.println("u=" + print(vals[7]));
-                    }
-                }
-            }
             SetInterval fInf = ic.numsToInterval(
                     thermoFreqModel.getLowerModelFfromAdcOut(CC, CF, u.doubleInf(), adcOut),
                     thermoFreqModel.getLowerModelFfromAdcOut(CC, CF, u.doubleSup(), adcOut));
@@ -412,7 +362,7 @@ public class IntervalModel {
         }
     }
 
-    private static String print(SetInterval x) {
+    static String print(SetInterval x) {
         return "[" + x.doubleInf() + "," + x.doubleSup() + "]";
     }
 

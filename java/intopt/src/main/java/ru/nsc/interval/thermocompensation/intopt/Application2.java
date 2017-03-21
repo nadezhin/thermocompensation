@@ -32,7 +32,6 @@ public class Application2 {
         long startTime;
         final IntervalModel chip = models.get(ipm).get(chipNo);
         System.out.println("Chip " + (chipNo + 1) + " f0=" + chip.getF0() + " CC=" + chip.getCC() + " CF=" + chip.getCF());
-        ChipMin chipMin = new ChipMin(chip.getThermoFreqModel(), chip.getF0(), chip.getCC(), chip.getCF());
 
         // Heuristic optimization
         startTime = System.currentTimeMillis();
@@ -41,14 +40,10 @@ public class Application2 {
         Optim.Record record = Optim.optimF(out, chip.getThermoFreqModel(),
                 chip.getCC(), chip.getCF(), new AdcRange(0, 4095), chip.getF0());
         PolyState.Inp heuristicInp = record.inp;
-        System.out.println(record.inp.toNom() + " +-" + record.bestDiff / record.targetF * 1e6);
+        System.out.println(record.inp.toNom() + " +-" + chip.evalMaxPpm(heuristicInp));
         out.close();
         ba.close();
         System.out.println(((System.currentTimeMillis() - startTime + 999) / 1000) + " sec");
-        int numAdcOuts = chip.getThermoFreqModel().getAdcOuts().length;
-        int[] l = new int[numAdcOuts];
-        int[] u = new int[numAdcOuts];
-        chipMin.getBoundsStrong(record.bestDiff, l, u);
 
         // Combined interval optimizations
         startTime = System.currentTimeMillis();
@@ -98,7 +93,7 @@ public class Application2 {
         PolyState.Inp recordInp = record.inp;
         double bestDiff = im.evalMaxAbsDF(recordInp).doubleSup();
         chipMin.getBoundsStrong(bestDiff, l, u);
-        System.out.println("ppm=" + im.evalMaxPpm(recordInp));
+//        System.out.println("ppm=" + im.evalMaxPpm(recordInp));
         for (int infbit = 0; infbit <= 63; infbit++) {
             for (int sbit = 0; sbit <= 31; sbit++) {
                 OptimMin optimMin = new OptimMin(chip.getAdcOuts(), fixBugP, infbit, sbit);
