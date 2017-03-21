@@ -56,14 +56,20 @@ public class Application2 {
         System.out.println(((System.currentTimeMillis() - startTime + 999) / 1000) + " sec");
 
         for (IntervalPolyModel m : IntervalPolyModel.values()) {
+            if (ipm == IntervalPolyModel.IDEAL) {
+                continue;
+            }
             System.out.println(m.getAbbrev() + " heuristic: " + models.get(m).get(chipNo).evalMaxPpm(heuristicInp));
         }
         for (IntervalPolyModel m : IntervalPolyModel.values()) {
+            if (ipm == IntervalPolyModel.IDEAL) {
+                continue;
+            }
             System.out.println(m.getAbbrev() + " combined: " + models.get(m).get(chipNo).evalMaxPpm(combinedInp));
         }
         // Plot and print
         if (gnuplot) {
-            showChip(plotDirName, chipNo, models, heuristicInp, combinedInp);
+            showChip(plotDirName, chipNo, models.get(ipm), heuristicInp, combinedInp);
         }
 
         // Interval optimization
@@ -106,6 +112,7 @@ public class Application2 {
                     double newDiff = im.evalMaxAbsDF(inp).doubleSup();
                     if (newDiff < bestDiff) {
                         recordInp = inp;
+                        bestDiff = newDiff;
                         chipMin.getBoundsStrong(bestDiff, l, u);
                         System.out.println("ppm=" + im.evalMaxPpm(recordInp));
                     }
@@ -116,8 +123,8 @@ public class Application2 {
     }
 
     private static void showChip(String plotDirName, int chipNo,
-            Map<IntervalPolyModel, List<IntervalModel>> models,
-            PolyState.Inp heuristicInp, PolyState.Inp intervalInp) throws IOException, InterruptedException {
+            List<IntervalModel> models,
+            PolyState.Inp heuristicInp, PolyState.Inp combinedInp) throws IOException, InterruptedException {
         String plotName = "plot";
         String chipName = "" + (chipNo + 1);
 
@@ -130,20 +137,10 @@ public class Application2 {
                 "Датчик температуры",
                 "Отклонение компенсированной частоты (ppm)",
                 "%.1f");
-        for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
-            if (ipm != IntervalPolyModel.MANUFACTURED) {
-                continue;
-            }
-            IntervalModel model = models.get(ipm).get(chipNo);
-            showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " interval  ", model, intervalInp);
-        }
-        for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
-            if (ipm != IntervalPolyModel.MANUFACTURED) {
-                continue;
-            }
-            IntervalModel model = models.get(ipm).get(chipNo);
-            showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " heuristic ", model, heuristicInp);
-        }
+        IntervalModel model = models.get(chipNo);
+        String abbrev = model.getPolyModel().getAbbrev();
+        showModelInpIntervalPpm(chipShow, abbrev + " combined  ", model, combinedInp);
+        showModelInpIntervalPpm(chipShow, abbrev + " heuristic ", model, heuristicInp);
         chipShow.closePdf();
         chipShow.closeAndRunGnuplot();
     }
