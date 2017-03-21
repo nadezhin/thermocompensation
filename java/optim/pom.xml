@@ -35,6 +35,10 @@
             <artifactId>jinterval-interval-java</artifactId>
         </dependency>
         <dependency>
+            <groupId>net.java.jinterval</groupId>
+            <artifactId>jinterval-ils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
         </dependency>
