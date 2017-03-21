@@ -17,9 +17,9 @@ public class IntModel {
     public final int xs;
     public final boolean fixBugP;
     public final long k1, k2, k3, k4, k5;
-    long m, l, u;
+    public long m, l, u;
 
-    IntModel(int xs, boolean fixBugP) {
+    public IntModel(int xs, boolean fixBugP) {
         if (Math.abs(xs) >= 0x1000) {
             throw new IllegalArgumentException();
         }
