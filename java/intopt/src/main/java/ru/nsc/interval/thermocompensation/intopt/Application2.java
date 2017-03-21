@@ -65,7 +65,7 @@ public class Application2 {
             if (m == IntervalPolyModel.IDEAL) {
                 continue;
             }
-            System.out.println(m.getAbbrev() + " combined: " + models.get(m).get(chipNo).evalMaxPpm(combinedInp));
+            System.out.println(m.getAbbrev() + " combined:  " + models.get(m).get(chipNo).evalMaxPpm(combinedInp));
         }
         // Plot and print
         if (gnuplot) {
