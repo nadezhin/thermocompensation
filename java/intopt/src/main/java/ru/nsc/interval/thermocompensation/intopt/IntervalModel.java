@@ -129,6 +129,10 @@ public class IntervalModel {
         return polyModel.getTopBox();
     }
 
+    public IntervalPolyModel getPolyModel() {
+        return polyModel;
+    }
+
     public ChipModel getThermoFreqModel() {
         return thermoFreqModel;
     }
@@ -305,6 +309,22 @@ public class IntervalModel {
             result[i] = ic.sub(result[i], f0);
         }
         return result;
+    }
+
+    /**
+     * Вычислить оценку погрешности частоты f для всех температур из массива
+     *
+     * @param inp набор коэффициентов
+     * @param temps массив цифровых температур
+     * @return массив оценок погрешности частоты
+     */
+    public SetInterval evalMaxAbsDF(PolyState.Inp inp) {
+        SetInterval[] df = evalDF(inp, getTemps());
+        SetInterval max = ic.numsToInterval(0, 0);
+        for (SetInterval v : df) {
+            max = ic.max(max, ic.abs(v));
+        }
+        return max;
     }
 
     /**
