@@ -56,13 +56,13 @@ public class Application2 {
         System.out.println(((System.currentTimeMillis() - startTime + 999) / 1000) + " sec");
 
         for (IntervalPolyModel m : IntervalPolyModel.values()) {
-            if (ipm == IntervalPolyModel.IDEAL) {
+            if (m == IntervalPolyModel.IDEAL) {
                 continue;
             }
             System.out.println(m.getAbbrev() + " heuristic: " + models.get(m).get(chipNo).evalMaxPpm(heuristicInp));
         }
         for (IntervalPolyModel m : IntervalPolyModel.values()) {
-            if (ipm == IntervalPolyModel.IDEAL) {
+            if (m == IntervalPolyModel.IDEAL) {
                 continue;
             }
             System.out.println(m.getAbbrev() + " combined: " + models.get(m).get(chipNo).evalMaxPpm(combinedInp));
