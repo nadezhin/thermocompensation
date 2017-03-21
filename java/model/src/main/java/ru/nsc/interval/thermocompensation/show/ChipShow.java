@@ -137,7 +137,9 @@ public class ChipShow {
         try {
             Process process = pb.start();
             int status = process.waitFor();
-            System.out.println("status = " + status);
+            if (status != 0) {
+                System.out.println("gnuplot status = " + status);
+            }
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
