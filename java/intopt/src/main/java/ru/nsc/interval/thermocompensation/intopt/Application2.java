@@ -92,7 +92,7 @@ public class Application2 {
         int[] u = new int[numAdcOuts];
         PolyState.Inp recordInp = record.inp;
         double bestDiff = im.evalMaxAbsDF(recordInp).doubleSup();
-        if (bestDiff >= chipMin.possibleDF) {
+        if (bestDiff <= chipMin.possibleDF) {
             return recordInp;
         }
         chipMin.getBoundsStrong(bestDiff, l, u);
@@ -112,7 +112,7 @@ public class Application2 {
                         recordInp = inp;
                         bestDiff = newDiff;
                         System.out.println("ppm=" + im.evalMaxPpm(recordInp));
-                        if (bestDiff >= chipMin.possibleDF) {
+                        if (bestDiff <= chipMin.possibleDF) {
                             return recordInp;
                         }
                         chipMin.getBoundsStrong(bestDiff, l, u);
