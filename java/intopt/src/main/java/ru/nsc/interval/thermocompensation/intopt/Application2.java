@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import net.java.jinterval.interval.set.SetInterval;
@@ -60,7 +61,7 @@ public class Application2 {
             if (m == IntervalPolyModel.IDEAL) {
                 continue;
             }
-            System.out.println(m.getAbbrev() + " combined:  " + models.get(m).get(chipNo).evalMaxPpm(combinedInp));
+            System.out.println(m.getAbbrev() + " enhanced:  " + models.get(m).get(chipNo).evalMaxPpm(combinedInp));
         }
         // Plot and print
         if (gnuplot) {
@@ -99,28 +100,170 @@ public class Application2 {
 //        System.out.println("ppm=" + im.evalMaxPpm(recordInp));
         for (int infbit = 0; infbit <= 63; infbit++) {
             for (int sbit = 0; sbit <= 31; sbit++) {
+//                System.out.println("====================================== [" + infbit + "," + sbit + "] ");
                 OptimMin optimMin = new OptimMin(chip.getAdcOuts(), fixBugP, infbit, sbit);
                 double[] coeff = optimMin.optim(l, u);
                 if (coeff != null) {
-                    System.out.print("[" + infbit + "," + sbit + "] ");
-                    ThermOpt2 program = new ThermOpt2(im, infbit, sbit, eps, ic);
-                    program.updateRecord(recordInp);
-                    int[] result = program.startOptimization();
-                    PolyState.Inp inp = im.pointAsInp(result);
-                    double newDiff = im.evalMaxAbsDF(inp).doubleSup();
-                    if (newDiff < bestDiff) {
-                        recordInp = inp;
-                        bestDiff = newDiff;
-                        System.out.println("ppm=" + im.evalMaxPpm(recordInp));
-                        if (bestDiff <= chipMin.possibleDF) {
-                            return recordInp;
+                    BitSet bs = new BitSet(5);
+                    bs.set(0, 5);
+//                    System.out.print("[" + infbit + "," + sbit + "] ");
+                    for (;;) {
+                        PolyState.Inp inp = explore(optimMin, l, u, bs, im, bestDiff);
+                        if (inp == null) {
+                            break;
                         }
-                        chipMin.getBoundsStrong(bestDiff, l, u);
+                        double newDiff = im.evalMaxAbsDF(inp).doubleSup();
+                        if (newDiff < bestDiff) {
+                            recordInp = inp;
+                            bestDiff = newDiff;
+                            System.out.println(inp.toNom() + " +-" + im.evalMaxPpm(inp));
+//                            System.out.println("ppm=" + im.evalMaxPpm(recordInp));
+                            if (bestDiff <= chipMin.possibleDF) {
+                                return recordInp;
+                            }
+                            chipMin.getBoundsStrong(bestDiff, l, u);
+                        }
                     }
+//                    ThermOpt2 program = new ThermOpt2(im, infbit, sbit, eps, ic);
+//                    program.updateRecord(recordInp);
+//                    int[] result = program.startOptimization();
+//                    PolyState.Inp inp = im.pointAsInp(result);
+//                    double newDiff = im.evalMaxAbsDF(inp).doubleSup();
+//                    if (newDiff < bestDiff) {
+//                        recordInp = inp;
+//                        bestDiff = newDiff;
+//                        System.out.println("ppm=" + im.evalMaxPpm(recordInp));
+//                        if (bestDiff <= chipMin.possibleDF) {
+//                            return recordInp;
+//                        }
+//                        chipMin.getBoundsStrong(bestDiff, l, u);
+//                    }
                 }
             }
         }
         return recordInp;
+    }
+
+    private static PolyState.Inp explore(OptimMin optimMin, int[] l, int[] u, BitSet iterateVars,
+            IntervalModel im, double bestDiff) {
+        double[] coeff = optimMin.optim(l, u);
+//        for (int i = iterateVars.cardinality(); i < 5; i++) {
+//            System.out.print(' ');
+//        }
+//        for (int i = 0; i < coeff.length; i++) {
+//            System.out.print(" " + coeff[i]);
+//        }
+//        System.out.println();
+        if (iterateVars.isEmpty()) {
+            PolyState.Inp inp = PolyState.Inp.genNom();
+            assert optimMin.kl[0] == optimMin.ku[0];
+            assert optimMin.kl[1] == optimMin.ku[1];
+            assert optimMin.kl[2] == optimMin.ku[2];
+            assert optimMin.kl[3] == optimMin.ku[3];
+            assert optimMin.kl[4] == optimMin.ku[4];
+            inp.INF = optimMin.infbit;
+            inp.SBIT = optimMin.sbit;
+            inp.K1BIT = optimMin.kl[0];
+            inp.K2BIT = optimMin.kl[1];
+            inp.K3BIT = optimMin.kl[2];
+            inp.K4BIT = optimMin.kl[3];
+            inp.K5BIT = optimMin.kl[4];
+            if (im.evalMaxAbsDF(inp).doubleSup() < bestDiff) {
+//                System.out.println("------- HERE ----------");
+                return inp;
+            } else {
+                return null;
+            }
+        }
+        int[] minK = new int[5];
+        int[] maxK = new int[5];
+        for (int i = 0; i < 5; i++) {
+            if (!iterateVars.get(i)) {
+                assert optimMin.kl[i] == optimMin.ku[i];
+                minK[i] = optimMin.kl[i];
+                maxK[i] = optimMin.ku[i];
+                continue;
+            }
+            minK[i] = Integer.MAX_VALUE;
+            maxK[i] = Integer.MIN_VALUE;
+
+            int fi = Math.max(optimMin.kl[i], (int) Math.floor(coeff[i]));
+            int saveU = optimMin.ku[i];
+            for (int k = fi; k >= optimMin.kl[i]; k--) {
+                optimMin.ku[i] = k;
+                double[] coeff1 = optimMin.optim(l, u);
+                if (coeff1 == null) {
+                    break;
+                }
+                minK[i] = Math.min(minK[i], k);
+                maxK[i] = Math.max(maxK[i], k);
+//                System.out.print("k" + (i + 1) + "bit<=" + k);
+//                for (int j = 0; j < coeff1.length; j++) {
+//                    System.out.print(" " + coeff1[j]);
+//                }
+//                System.out.println();
+            }
+            optimMin.ku[i] = saveU;
+
+            int ci = Math.min(optimMin.ku[i], (int) Math.ceil(coeff[i]));
+            int saveL = optimMin.kl[i];
+            for (int k = ci; k <= optimMin.ku[i]; k++) {
+                optimMin.kl[i] = k;
+                double[] coeff1 = optimMin.optim(l, u);
+                if (coeff1 == null) {
+                    break;
+                }
+                minK[i] = Math.min(minK[i], k);
+                maxK[i] = Math.max(maxK[i], k);
+//                System.out.print("k" + (i + 1) + "bit>=" + k);
+//                for (int j = 0; j < coeff1.length; j++) {
+//                    System.out.print(" " + coeff1[j]);
+//                }
+//                System.out.println();
+            }
+            optimMin.kl[i] = saveL;
+        }
+        boolean isEmpty = false;
+        int minI = -1;
+        int minW = Integer.MAX_VALUE;
+//        for (int i = iterateVars.cardinality(); i < 5; i++) {
+//            System.out.print(' ');
+//        }
+        for (int i = 0; i < 5; i++) {
+            if (minK[i] <= maxK[i]) {
+//                System.out.print(minK[i] <= maxK[i] ? " [" + minK[i] + "," + maxK[i] + "]" : "[]");
+                if (iterateVars.get(i) && maxK[i] - minK[i] <= minW) {
+                    minI = i;
+                    minW = maxK[i] - minK[i];
+                }
+            } else {
+//                System.out.print(" []");
+                isEmpty = true;
+            }
+        }
+//        System.out.println();
+        if (isEmpty) {
+            return null;
+        }
+        assert iterateVars.get(minI);
+        iterateVars.clear(minI);
+        int saveL = optimMin.kl[minI];
+        int saveU = optimMin.ku[minI];
+        for (int k = minK[minI]; k <= maxK[minI]; k++) {
+            optimMin.kl[minI] = k;
+            optimMin.ku[minI] = k;
+            PolyState.Inp inp = explore(optimMin, l, u, iterateVars, im, bestDiff);
+            if (inp != null) {
+                iterateVars.set(minI);
+                optimMin.kl[minI] = saveL;
+                optimMin.ku[minI] = saveU;
+                return inp;
+            }
+        }
+        iterateVars.set(minI);
+        optimMin.kl[minI] = saveL;
+        optimMin.ku[minI] = saveU;
+        return null;
     }
 
     private static void showChip(String plotDirName, int chipNo,
@@ -140,7 +283,7 @@ public class Application2 {
                 "%.1f");
         IntervalModel model = models.get(chipNo);
         String abbrev = model.getPolyModel().getAbbrev();
-        showModelInpIntervalPpm(chipShow, abbrev + " combined  ", model, combinedInp);
+        showModelInpIntervalPpm(chipShow, abbrev + " enhanced  ", model, combinedInp);
         showModelInpIntervalPpm(chipShow, abbrev + " heuristic ", model, heuristicInp);
         chipShow.closePdf();
         chipShow.closeAndRunGnuplot();
