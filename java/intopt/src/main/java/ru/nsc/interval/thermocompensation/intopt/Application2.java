@@ -147,6 +147,9 @@ public class Application2 {
     private static PolyState.Inp explore(OptimMin optimMin, int[] l, int[] u, BitSet iterateVars,
             IntervalModel im, double bestDiff) {
         double[] coeff = optimMin.optim(l, u);
+        if (coeff == null) {
+            return null;
+        }
 //        for (int i = iterateVars.cardinality(); i < 5; i++) {
 //            System.out.print(' ');
 //        }
