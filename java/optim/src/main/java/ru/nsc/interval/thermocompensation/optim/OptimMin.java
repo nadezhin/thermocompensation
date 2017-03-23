@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -42,8 +43,6 @@ public class OptimMin {
     private static final double SCALE = 0x1p-44;
     private static final int SCALE_P = -44;
 
-    private static final int[] kl = {1, 0, 0, 0, 0};
-    private static final int[] ku = {255, 127, 31, 31, 15};
     //
     public final boolean fixBugP;
     public final int infbit;
@@ -55,6 +54,8 @@ public class OptimMin {
     private final List<IntModel> intModels = new ArrayList<>();
     private final int[] lm;
     private final int[] um;
+    public final int[] kl = {1, 0, 0, 0, 0};
+    public final int[] ku = {255, 127, 31, 31, 15};
     private RealMatrix A0;
     private RealVector rhs;
     private IntervalMatrix A0i;
@@ -194,10 +195,19 @@ public class OptimMin {
                 A_.setRowVector(k, A0.getRowVector(v));
                 b_.setEntry(k, rhs.getEntry(v));
             } else {
-                A_.setEntry(k, -v - 1, 1);
+                v = -v - 1;
+                A_.setEntry(k, v, 1);
             }
         }
         DecompositionSolver solver = new LUDecomposition(A_).getSolver();
+//        if (!solver.isNonSingular()) {
+//            curBasis = basis;
+//            A = A_;
+//            b = b_;
+//            signs = new BitSet();
+//            printBasis();
+//            solver = solver;
+//        }
         RealMatrix Ainv_ = solver.getInverse();
         BitSet signs_ = new BitSet();
         for (int i = 0; i < basis.Vcard; i++) {
@@ -212,7 +222,7 @@ public class OptimMin {
                         A_.setEntry(i, v, -1);
                     }
                 }
-                b_.setEntry(i, kl[v]);
+                b_.setEntry(i, -kl[v]);
             } else {
                 b_.setEntry(i, ku[v]);
             }
@@ -307,6 +317,24 @@ public class OptimMin {
         return optBound;
     }
 
+    private static class NextBasis implements Comparable<NextBasis> {
+
+        final double value;
+        final int elt;
+        final boolean sign;
+
+        NextBasis(double value, int elt, boolean sign) {
+            this.value = value;
+            this.elt = elt;
+            this.sign = sign;
+        }
+
+        @Override
+        public int compareTo(NextBasis that) {
+            return Double.compare(this.value, that.value);
+        }
+    }
+
     private double[] checkSol() {
         double[] result = new double[numVars];
         initBasis();
@@ -340,115 +368,132 @@ public class OptimMin {
                         ? curBasis.index[nextK++]
                         : Integer.MAX_VALUE;
             }
-            int minI = Integer.MIN_VALUE;
-            double minV = Double.POSITIVE_INFINITY;
-            boolean signI = false;
+            List<NextBasis> nextList = new ArrayList<>();
             for (int i = numVars - 2; i >= 0; i--) {
                 int v = -i - 1;
+                double bv = x.getEntry(i);
+                double dl = bv - kl[i];
+                double du = ku[i] - bv;
+//                System.out.println("b" + (i + 1) + "l " + dl + " = " + bv + " - " + kl[i]);
+//                System.out.println("b" + (i + 1) + "u " + du + " = " + ku[i] + " - " + bv);
                 if (v == nextIndex) {
                     nextIndex = nextK < curBasis.index.length
                             ? curBasis.index[nextK++]
                             : Integer.MAX_VALUE;
                     continue;
                 }
-                double bv = x.getEntry(i);
-                double dl = bv - kl[i];
-                double du = ku[i] - bv;
-//                System.out.println("b" + (i+1) + "l " + dl + " = " + bv + " - " + kl[i]);
-//                System.out.println("b" + (i+1) + "u " + du + " = " + ku[i] + " - " + bv);
 
-                if (dl < minV || du < minV) {
-                    minI = -i - 1;
-                    minV = Math.min(dl, du);
-                    signI = dl < du;
+                if (dl <= 0 || du <= 0) {
+                    nextList.add(new NextBasis(Math.min(dl, du), -i - 1, dl < du));
                 }
             }
 
             RealVector A0x = A0.operate(x);
             RealVector defect = new ArrayRealVector(rhs).subtract(A0x);
             for (int i = 0; i < constrNames.length; i++) {
+                double dv = rhs.getEntry(i) - A0x.getEntry(i);
+//                System.out.println(constrNames[i] + " "
+//                        + dv + " = " + rhs.getEntry(i) + " - " + A0x.getEntry(i));
                 if (i == nextIndex) {
                     nextIndex = nextK < curBasis.index.length
                             ? curBasis.index[nextK++]
                             : Integer.MAX_VALUE;
                     continue;
                 }
-                double dv = rhs.getEntry(i) - A0x.getEntry(i);
-//                System.out.println(constrNames[i] + " "
-//                        + dv + " = " + rhs.getEntry(i) + " - " + A0x.getEntry(i));
-                if (dv < minV) {
-                    minI = i;
-                    minV = dv;
+                if (dv <= 0) {
+                    nextList.add(new NextBasis(dv, i, false));
                 }
             }
             assert nextIndex == Integer.MAX_VALUE;
 
 //            System.out.println("minI=" + minI + " minV=" + minV);
-            if (minV > 0) {
+            if (nextList.isEmpty()) {
                 break;
             }
+            Collections.sort(nextList);
 
-            RealVector direction;
-            if (minI >= 0) {
-                direction = A0.getRowVector(minI);
-            } else {
-                int v = -minI - 1;
-                direction = new ArrayRealVector(numVars);
-                direction.setEntry(v, signI ? -1 : 1);
-            }
+            for (NextBasis nb : nextList) {
+                int minI = nb.elt;
+                boolean signI = nb.sign;
+//            System.out.println("minI=" + minI + " minV=" + minV);
 
-            RealMatrix Ainvt = Ainv.transpose();
-            RealVector deriv = Ainvt.operate(direction);
+                RealVector direction;
+                if (minI >= 0) {
+                    direction = A0.getRowVector(minI);
+                } else {
+                    int v = -minI - 1;
+                    direction = new ArrayRealVector(numVars);
+                    direction.setEntry(v, signI ? -1 : 1);
+                }
 
-//            for (int i = 0; i < numVars; i++) {
-//                System.out.println("deriv[" + i + "]=" + deriv.getEntry(i));
-//            }
-            int maxUlps = 10;
-            // create a list of all the rows that tie for the lowest score in the minimum ratio test
-            List<Integer> minRatioPositions = new ArrayList<Integer>();
-            double minRatio = Double.MAX_VALUE;
-            for (int i = 0; i < numVars; i++) {
+                RealMatrix Ainvt = Ainv.transpose();
+                RealVector deriv = Ainvt.operate(direction);
+
+//                for (int i = 0; i < numVars; i++) {
+//                    System.out.println("deriv[" + i + "]=" + deriv.getEntry(i));
+//                }
+                int maxUlps = 10;
+                // create a list of all the rows that tie for the lowest score in the minimum ratio test
+                List<Integer> minRatioPositions = new ArrayList<Integer>();
+                double minRatio = Double.MAX_VALUE;
+                for (int i = 0; i < numVars; i++) {
 //                if (curBasis.basisC.contains(i)) {
 //                    continue;
 //                }
-                final double rhs = c[i];
-                final double entry = deriv.getEntry(i);
+                    final double rhs = c[i];
+                    final double entry = deriv.getEntry(i);
 
-                if (Precision.compareTo(entry, 0d, maxUlps) > 0) {
-                    final double ratio = rhs / entry;
-                    // check if the entry is strictly equal to the current min ratio
-                    // do not use a ulp/epsilon check
-                    final int cmp = Double.compare(ratio, minRatio);
-                    if (cmp == 0) {
-                        minRatioPositions.add(i);
-                    } else if (cmp < 0) {
-                        minRatio = ratio;
-                        minRatioPositions = new ArrayList<Integer>();
-                        minRatioPositions.add(i);
+                    if (Precision.compareTo(entry, 0d, maxUlps) > 0) {
+                        final double ratio = rhs / entry;
+                        // check if the entry is strictly equal to the current min ratio
+                        // do not use a ulp/epsilon check
+                        final int cmp = Double.compare(ratio, minRatio);
+                        if (cmp == 0) {
+                            minRatioPositions.add(i);
+                        } else if (cmp < 0) {
+                            minRatio = ratio;
+                            minRatioPositions = new ArrayList<Integer>();
+                            minRatioPositions.add(i);
+                        }
                     }
                 }
-            }
+//                System.out.println("minRatio=" + minRatio);
+//                for (int i = 0; i < numVars; i++) {
+//                    System.out.println("cn[" + i + "]=" + (c[i] - minRatio * deriv.getEntry(i)));
+//                }
+//                System.out.print("Candidates:");
+//                for (Integer pos : minRatioPositions) {
+//                    System.out.print(" " + pos);
+//                }
+//                System.out.println();
 
-            Basis newBasis = null;
-            for (Integer row : minRatioPositions) {
-                int excludeInd = minI;//basisIndex[maxI];
-                Basis basis = new Basis(curBasis, curBasis.index[row], excludeInd);
+                Basis newBasis = null;
+                for (Integer row : minRatioPositions) {
+                    int excludeInd = minI;//basisIndex[maxI];
+                    Basis basis = new Basis(curBasis, curBasis.index[row], excludeInd);
 //                Basis basis = new Basis(curBasis, excludeInd, row);
-                if (!visited.contains(basis)) {
-                    newBasis = basis;
+                    if (!visited.contains(basis)) {
+                        try {
+                            setBasis(basis);
+                            newBasis = basis;
+                            break;
+                        } catch (SingularMatrixException e) {
+//                            System.out.println("Found singular basis");
+                        }
+                    }
+                }
+                if (newBasis != null) {
+                    visited.add(curBasis);
                     break;
                 }
-            }
-            if (newBasis == null) {
-                break;
-            }
-            try {
-                setBasis(newBasis);
-            } catch (SingularMatrixException e) {
-                break;
-            }
-            visited.add(curBasis);
+//                try {
+//                    setBasis(newBasis);
+//                } catch (SingularMatrixException e) {
+//                    break;
+//                }
+//                visited.add(curBasis);
 //            System.out.println(curBasis);
+            }
         }
         return result;
     }
