@@ -150,7 +150,7 @@ public class Application {
 
     private static void help() {
         System.out.println("Usage: java -ea -Djna.library.path=../lib -jar intoptXXX.jar dir [-print] [-sN] [-ideal] [-eD] [-nN] [-g] [-p]");
-        System.out.println("  -print - prints table of (T, u, f_inf, f_sup) for all chips if no chip number specified");
+        System.out.println("  -print - prints table of (T, u, max(|f_inf-f0|, |f_sup-f0|)) for all chips if no chip number specified");
         System.out.println("  -sN stage N   - N=1 or N=2");
         System.out.println("  -ideal  IDEAL model");
         System.out.println("  -spec   SPECIFIED model");
