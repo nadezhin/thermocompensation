@@ -46,7 +46,7 @@ public class Application {
         outputData.mkdir();
 
         Writer writer = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(outputData.getName() + "/N_" + chipNo + ".txt"), "utf-8"));
+                new FileOutputStream(outputData.getName() + "/N_" + (chipNo + 1) + ".txt"), "utf-8"));
 
         for (int i = 0; i < DIG_TEMP.length; i++) {
             for (int dac = ADC_MIN; dac < ADC_MAX; dac++) {
