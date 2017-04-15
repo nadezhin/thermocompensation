@@ -29,8 +29,10 @@ public class Application {
     static SetIntervalContext ic = null;
     static double eps = 1e-5;
     static boolean gnuplot = false;
-    static int ADC_MAX = 4095;
-    static int ADC_MIN = 0;
+    static final int ADC_MAX = 4095;
+    static final int ADC_MIN = 0;
+    static final int DAC_MAX = 4095;
+    static final int DAC_MIN = 0;
 
     private static void printChip(IntervalPolyModel ipm, int chipNo, Map<IntervalPolyModel, List<IntervalModel>> allModels)
             throws IOException, InterruptedException {
@@ -49,7 +51,7 @@ public class Application {
                 new FileOutputStream(outputData.getName() + "/N_" + (chipNo + 1) + ".txt"), "utf-8"));
 
         for (int i = 0; i < DIG_TEMP.length; i++) {
-            for (int dac = ADC_MIN; dac < ADC_MAX; dac++) {
+            for (int dac = DAC_MIN; dac < DAC_MAX; dac++) {
                 f_inf = chipModel.getLowerModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
                 f_sup = chipModel.getUpperModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
 
