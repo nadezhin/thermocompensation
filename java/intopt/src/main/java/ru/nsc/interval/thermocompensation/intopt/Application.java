@@ -1,29 +1,66 @@
 package ru.nsc.interval.thermocompensation.intopt;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import net.java.jinterval.interval.set.SetInterval;
 import net.java.jinterval.interval.set.SetIntervalContext;
 import net.java.jinterval.interval.set.SetIntervalContexts;
 import ru.nsc.interval.thermocompensation.model.AdcRange;
+import ru.nsc.interval.thermocompensation.model.ChipModel;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps.ExtendedInp;
 import ru.nsc.interval.thermocompensation.model.PolyState;
 import ru.nsc.interval.thermocompensation.optim.Optim;
 import ru.nsc.interval.thermocompensation.show.ChipShow;
 
+import java.io.PrintWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 public class Application {
 
     static SetIntervalContext ic = null;
     static double eps = 1e-5;
     static boolean gnuplot = false;
+    static final int ADC_MAX = 4095;
+    static final int ADC_MIN = 0;
+    static final int DAC_MAX = 4095;
+    static final int DAC_MIN = 0;
+
+    private static void printChip(IntervalPolyModel ipm, int chipNo, Map<IntervalPolyModel, List<IntervalModel>> allModels)
+            throws IOException, InterruptedException {
+        IntervalModel chip = allModels.get(ipm).get(chipNo);
+        int CC = chip.getCC();
+        int CF = chip.getCF();
+        double F0 = chip.getF0();
+        ChipModel chipModel = chip.getThermoFreqModel();
+        int[] DIG_TEMP = chipModel.getAdcOuts();
+        double f_inf, f_sup, freqDifference;
+
+        File outputData = new File("outputData");
+        outputData.mkdir();
+
+        Writer writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(outputData.getName() + "/N_" + (chipNo + 1) + ".txt"), "utf-8"));
+
+        for (int i = 0; i < DIG_TEMP.length; i++) {
+            for (int dac = DAC_MIN; dac < DAC_MAX; dac++) {
+                f_inf = chipModel.getLowerModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
+                f_sup = chipModel.getUpperModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
+
+                freqDifference = Math.max(Math.abs(f_sup - F0), Math.abs(f_inf - F0));
+                writer.write(DIG_TEMP[i] + "; " + dac + "; " + freqDifference + ";\n");
+            }
+        }
+        writer.close();
+    }
 
     private static void doChip(String plotDirName, IntervalPolyModel ipm, int chipNo,
             Map<IntervalPolyModel, List<IntervalModel>> models) throws IOException, InterruptedException {
@@ -43,7 +80,7 @@ public class Application {
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
         PrintWriter out = new PrintWriter(ba);
         Optim.Record record = Optim.optimF(out, chip.getThermoFreqModel(),
-                chip.getCC(), chip.getCF(), new AdcRange(0, 4095), chip.getF0());
+                chip.getCC(), chip.getCF(), new AdcRange(ADC_MIN, ADC_MAX), chip.getF0());
         PolyState.Inp heuristicInp = record.inp;
         System.out.println(record.inp.toNom() + " +-" + record.bestDiff / record.targetF * 1e6);
         out.close();
@@ -114,7 +151,8 @@ public class Application {
     }
 
     private static void help() {
-        System.out.println("Usage: java -ea -Djna.library.path=../lib -jar intoptXXX.jar dir [-sN] [-ideal] [-eD] [-nN] [-g] [-p]");
+        System.out.println("Usage: java -ea -Djna.library.path=../lib -jar intoptXXX.jar dir [-print] [-sN] [-ideal] [-eD] [-nN] [-g] [-p]");
+        System.out.println("  -print - prints table of (T, u, max(|f_inf-f0|, |f_sup-f0|)) for all chips if no chip number specified");
         System.out.println("  -sN stage N   - N=1 or N=2");
         System.out.println("  -ideal  IDEAL model");
         System.out.println("  -spec   SPECIFIED model");
@@ -134,11 +172,14 @@ public class Application {
         IntervalPolyModel ipm = IntervalPolyModel.SPECIFIED;
         int stage = 0;
         int chipNo = -1;
+        boolean printOnly = false;
         List<String> argsList = new ArrayList<String>();
         for (String arg : args) {
             System.out.print(" " + arg);
             if (arg.startsWith("-")) {
-                if (arg.equals("-ideal")) {
+                if (arg.equals("-print")) {
+                    printOnly = true;
+                } else if (arg.equals("-ideal")) {
                     ipm = IntervalPolyModel.IDEAL;
                 } else if (arg.equals("-spec")) {
                     ipm = IntervalPolyModel.SPECIFIED;
@@ -204,13 +245,21 @@ public class Application {
         }
         List<IntervalModel> models = allModels.get(ipm);
         if (chipNo >= 0) {
-            doChip(plotDir, ipm, chipNo, allModels);
+            if (printOnly) {
+                printChip(ipm, chipNo, allModels);
+            } else {
+                doChip(plotDir, ipm, chipNo, allModels);
+            }
         } else {
             for (chipNo = 0; chipNo < models.size(); chipNo++) {
                 if (models.get(chipNo) == null) {
                     continue;
                 }
-                doChip(plotDir, ipm, chipNo, allModels);
+                if (printOnly) {
+                    printChip(ipm, chipNo, allModels);
+                } else {
+                    doChip(plotDir, ipm, chipNo, allModels);
+                }
             }
         }
     }
