@@ -50,13 +50,28 @@ public class Application {
         Writer writer = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(outputData.getName() + "/N_" + (chipNo + 1) + ".txt"), "utf-8"));
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ByteArrayOutputStream ba = new ByteArrayOutputStream();
+        PrintWriter out = new PrintWriter(ba);
+        Optim.Record record = Optim.optimF(out, chip.getThermoFreqModel(),
+                chip.getCC(), chip.getCF(), new AdcRange(ADC_MIN, ADC_MAX), chip.getF0());
+        PolyState.Inp heuristicInp = record.inp;
+        ba.close();
+        out.close();
+
+        double maxDeltaF = allModels.get(ipm).get(chipNo).evalMaxPpm(heuristicInp);
+        System.out.println(maxDeltaF);
+
         for (int i = 0; i < DIG_TEMP.length; i++) {
-            for (int dac = DAC_MIN; dac < DAC_MAX; dac++) {
+            for (int dac = DAC_MIN; dac <= DAC_MAX; dac++) {
                 f_inf = chipModel.getLowerModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
                 f_sup = chipModel.getUpperModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
 
                 freqDifference = Math.max(Math.abs(f_sup - F0), Math.abs(f_inf - F0));
-                writer.write(DIG_TEMP[i] + "; " + dac + "; " + freqDifference + ";\n");
+
+                if (freqDifference <= maxDeltaF) {
+                    writer.write(DIG_TEMP[i] + "; " + dac + "; " + freqDifference + ";\n");
+                }
             }
         }
         writer.close();
