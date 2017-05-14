@@ -20,9 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Application {
 
@@ -59,8 +57,25 @@ public class Application {
         ba.close();
         out.close();
 
+        System.out.println(heuristicInp.INF + " " + heuristicInp.SBIT + " " + heuristicInp.K1BIT + " " + heuristicInp.K2BIT + " "
+                + heuristicInp.K3BIT + " " + heuristicInp.K4BIT + " " + heuristicInp.K5BIT);
+
         double maxDeltaF = allModels.get(ipm).get(chipNo).evalMaxPpm(heuristicInp);
         System.out.println(maxDeltaF);
+
+        Queue<SetInterval[]> workingBoxes = new LinkedList<>();
+
+        SetInterval INFBIT = ic.numsToInterval(32, 47);
+        SetInterval SBIT = ic.numsToInterval(16, 31);
+        SetInterval K1BIT = ic.numsToInterval(33, 48);
+        SetInterval K2BIT = ic.numsToInterval(32, 47);
+        SetInterval K3BIT = ic.numsToInterval(16, 31);
+        SetInterval K4BIT = ic.numsToInterval(16, 31);
+        SetInterval K5BIT = ic.numsToInterval(0, 15);
+        SetInterval[] startBox = {INFBIT, SBIT, K1BIT, K2BIT, K3BIT, K4BIT, K5BIT}; //
+//        SetInterval[] startBox = chip.getTopBox();
+
+        workingBoxes.add(startBox);
 
         for (int i = 0; i < DIG_TEMP.length; i++) {
             for (int dac = DAC_MIN; dac <= DAC_MAX; dac++) {
@@ -71,9 +86,22 @@ public class Application {
 
                 if (freqDifference <= maxDeltaF) {
                     writer.write(DIG_TEMP[i] + "; " + dac + "; " + freqDifference + ";\n");
+
+                    // Try to write verification here
+                    Verifier verifier = new Verifier(chip, workingBoxes, DIG_TEMP[i], dac, 5, ic);
+                    workingBoxes = verifier.startVerification();
                 }
             }
         }
+
+        while (!workingBoxes.isEmpty()) {
+            SetInterval[] box = workingBoxes.poll();
+            for (int i = 0; i < box.length; i++) {
+                System.out.print("[" + box[i].doubleInf() + ", " + box[i].doubleSup() + "] ");
+            }
+            System.out.print("\n");
+        }
+
         writer.close();
     }
 

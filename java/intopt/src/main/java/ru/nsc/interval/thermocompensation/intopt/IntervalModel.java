@@ -190,7 +190,7 @@ public class IntervalModel {
     }
 
     /**
-     * Инетервальная оценка критерия оптимизации на заданном брусе и на заданном
+     * Интервальная оценка критерия оптимизации на заданном брусе и на заданном
      * массиве температур.
      *
      * @param box брус
@@ -215,6 +215,21 @@ public class IntervalModel {
             maxAbsDiffFreq = ic.max(maxAbsDiffFreq, ic.max(dfInf, dfSup));
         }
         return ic.mul(maxAbsDiffFreq, scale);
+    }
+
+    /**
+     * Интервальная оценка цифроаналового преобразователя на заданном брусе и
+     * на заданной температуре.
+     *
+     * @param box брус
+     * @param adcOut значение температуры
+     * @return интервальная оценка цифроаналового преобразователя
+     */
+    public SetInterval evalU(SetInterval[] box, int adcOut) {
+        SetInterval[] boxAndTemp = Arrays.copyOf(box, box.length + 1);
+        boxAndTemp[box.length] = ic.numsToInterval(adcOut, adcOut);
+        SetInterval u = setEv.evaluate(boxAndTemp)[0];
+        return u;
     }
 
     /**
