@@ -16,7 +16,7 @@ public class Verifier {
 
     Verifier(IntervalModel im, Queue<SetInterval[]> workingBoxes, int digitalTemperature, int dac, double eps, SetIntervalContext ic) {
         this.im = im;
-        this.workingBoxes = workingBoxes;
+        this.workingBoxes = new LinkedList<>(workingBoxes);
         this.digitalTemperature = digitalTemperature;
         this.dac = dac;
         this.eps = eps;
@@ -25,16 +25,13 @@ public class Verifier {
 
     public Queue<SetInterval[]> startVerification() {
         Queue<SetInterval[]> probablySolution = new LinkedList<>();
-        SetInterval dacInterval = ic.numsToInterval(dac, dac);
 
         while (!workingBoxes.isEmpty()) {
             SetInterval[] workingBox = workingBoxes.poll();
 
             SetInterval u = im.evalU(workingBox, digitalTemperature);
 
-            SetInterval uOffset = ic.sub(u, dacInterval);
-
-            if (uOffset.isMember(0)) {
+            if (u.isMember(dac)) {
                 if (multiDimWidth(workingBox) < eps) {
                     probablySolution.add(workingBox);
                 } else {

@@ -32,7 +32,8 @@ public class Application {
     static final int DAC_MAX = 4095;
     static final int DAC_MIN = 0;
 
-    private static void printChip(IntervalPolyModel ipm, int chipNo, Map<IntervalPolyModel, List<IntervalModel>> allModels)
+    private static void printChip(IntervalPolyModel ipm, int chipNo, Map<IntervalPolyModel, List<IntervalModel>> allModels,
+                                  double eps)
             throws IOException, InterruptedException {
         IntervalModel chip = allModels.get(ipm).get(chipNo);
         int CC = chip.getCC();
@@ -65,33 +66,58 @@ public class Application {
 
         Queue<SetInterval[]> workingBoxes = new LinkedList<>();
 
-        SetInterval INFBIT = ic.numsToInterval(32, 47);
-        SetInterval SBIT = ic.numsToInterval(16, 31);
-        SetInterval K1BIT = ic.numsToInterval(33, 48);
-        SetInterval K2BIT = ic.numsToInterval(32, 47);
-        SetInterval K3BIT = ic.numsToInterval(16, 31);
-        SetInterval K4BIT = ic.numsToInterval(16, 31);
-        SetInterval K5BIT = ic.numsToInterval(0, 15);
-        SetInterval[] startBox = {INFBIT, SBIT, K1BIT, K2BIT, K3BIT, K4BIT, K5BIT}; //
-//        SetInterval[] startBox = chip.getTopBox();
+//        SetInterval INFBIT = ic.numsToInterval(32, 47);
+//        SetInterval SBIT = ic.numsToInterval(16, 31);
+//        SetInterval K1BIT = ic.numsToInterval(33, 48);
+//        SetInterval K2BIT = ic.numsToInterval(32, 47);
+//        SetInterval K3BIT = ic.numsToInterval(16, 31);
+//        SetInterval K4BIT = ic.numsToInterval(16, 31);
+//        SetInterval K5BIT = ic.numsToInterval(0, 15);
+//        SetInterval[] startBox = {INFBIT, SBIT, K1BIT, K2BIT, K3BIT, K4BIT, K5BIT}; //
+        SetInterval[] startBox = chip.getTopBox();
 
         workingBoxes.add(startBox);
 
         for (int i = 0; i < DIG_TEMP.length; i++) {
+            Queue<SetInterval[]> modifiedBoxes = new LinkedList<>();
             for (int dac = DAC_MIN; dac <= DAC_MAX; dac++) {
                 f_inf = chipModel.getLowerModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
                 f_sup = chipModel.getUpperModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
 
                 freqDifference = Math.max(Math.abs(f_sup - F0), Math.abs(f_inf - F0));
 
-                if (freqDifference <= maxDeltaF) {
+                double scale = 1e6 / F0;
+
+                if (freqDifference * scale <= maxDeltaF) {
                     writer.write(DIG_TEMP[i] + "; " + dac + "; " + freqDifference + ";\n");
 
                     // Try to write verification here
-                    Verifier verifier = new Verifier(chip, workingBoxes, DIG_TEMP[i], dac, 5, ic);
-                    workingBoxes = verifier.startVerification();
+                    Verifier verifier = new Verifier(chip, workingBoxes, DIG_TEMP[i], dac, eps, ic);
+                    Queue<SetInterval[]> outputBoxes = verifier.startVerification();
+
+                    for (SetInterval[] box: outputBoxes) {
+                        boolean elementEqual = false;
+                        for (SetInterval[] modBox: modifiedBoxes) {
+                            boolean componentEqual = true;
+                            for (int j = 0; j < box.length; j++) {
+                                if (!box[j].equals(modBox[j])) {
+                                    componentEqual = false;
+                                    break;
+                                }
+                            }
+
+                            if (componentEqual) {
+                                elementEqual = true;
+                                break;
+                            }
+                        }
+                        if (!elementEqual) {
+                            modifiedBoxes.add(box);
+                        }
+                    }
                 }
             }
+            workingBoxes = modifiedBoxes;
         }
 
         while (!workingBoxes.isEmpty()) {
@@ -289,7 +315,7 @@ public class Application {
         List<IntervalModel> models = allModels.get(ipm);
         if (chipNo >= 0) {
             if (printOnly) {
-                printChip(ipm, chipNo, allModels);
+                printChip(ipm, chipNo, allModels, eps);
             } else {
                 doChip(plotDir, ipm, chipNo, allModels);
             }
@@ -299,7 +325,7 @@ public class Application {
                     continue;
                 }
                 if (printOnly) {
-                    printChip(ipm, chipNo, allModels);
+                    printChip(ipm, chipNo, allModels, eps);
                 } else {
                     doChip(plotDir, ipm, chipNo, allModels);
                 }
