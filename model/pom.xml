@@ -26,9 +26,4 @@
         </dependency>
     </dependencies>
 
-    <scm>
-        <connection>scm:git:https://github.com/nadezhin/thermocompensation</connection>
-        <developerConnection>scm:git:https://github.com/nadezhin/thermocompensation</developerConnection>
-        <url>https://github.com/nadezhin/thermocompensation/java/model</url>
-    </scm>
 </project>
