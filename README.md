@@ -1,9 +1,11 @@
-# thermocompensation
+# Thermocompensation
 Application of interval optimization to thermocompensation
 
-Build instruction:
-cd ${THERMOCOMPENSATION}/java
-mvn clean install
+## Build instruction:
+
+`cd ${THERMOCOMPENSATION}/java`
+
+`mvn clean install`
 
 File example/P.csv contains data for 8 devices.
 It contains 4 columns:
@@ -12,23 +14,69 @@ It contains 4 columns:
 - out       required output of polynom evaluator
 - freq      measured frequency used only for output
 
-Run instruction:
-cd ${THERMOCOMPENSATION}/java/optim
-mvn exec:exec
+## Run heuristic optimization:
 
-Expected output:
-1:  0 23 75 0 13 3 6 0 0 0 7 # f = 12002943 +- 35
-2:  17 16 107 0 21 0 8 0 0 0 7 # f = 12003021 +- 18
-3:  10 22 62 0 12 4 5 0 0 0 7 # f = 12003022 +- 44
-4:  16 24 102 0 16 19 0 0 0 0 7 # f = 12002942 +- 22
-5:  4 25 52 0 7 6 5 0 0 0 7 # f = 12002955 +- 37
-6:  21 15 119 1 26 0 8 0 0 0 7 # f = 12002816 +- 15
-7:  11 16 118 3 27 2 6 0 0 0 7 # f = 12002968 +- 22
-8:  15 19 89 0 16 4 6 0 0 0 7 # f = 12002933 +- 26
+`cd ${THERMOCOMPENSATION}/java/optim`
+
+`mvn exec:exec`
+
+## Expected output:
+---
+```
+14:  62 16 125 103 2 22 7 0 0 0 7 # f = 12000000 +- 9
+7:  63 17 80 124 8 26 5 0 0 0 7 # f = 12000000 +- 14
+9:  63 16 88 125 1 24 8 0 0 0 7 # f = 12000000 +- 20
+18:  63 25 80 68 1 25 2 0 0 0 7 # f = 12000000 +- 17
+12:  57 16 121 97 5 22 6 0 0 0 7 # f = 12000000 +- 7
+11:  53 14 122 126 2 28 14 0 0 0 7 # f = 12000000 +- 13
+4:  57 18 86 105 6 30 6 0 2 0 7 # f = 12000000 +- 11
+20:  63 17 107 111 8 30 6 0 4 0 7 # f = 12000000 +- 7
 chipNo: coefficients # f = freq +- delta
 - chipNo        device id;
 - coefficients  coefficients returned by optimization
 - freq          average frequency
 - delta         maximal delta between requred output and
                 actual output for found coefficients.
+```
+
+## Run interval optimization:
+
+`cd ${THERMOCOMPENSATION}/java/intopt`
+
+`mvn exec:exec`
+
+Maven is not necessary to run interval optimization.
+The result jar is `${THERMOCOMPENSATION}/java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar`
+
+## Running test without gnuplot:
+
+`cd ${THERMOCOMPENSATION}/example`
+
+`java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar P`
+
+Chips in `${THERMOCOMPENSATION}/example/P` are optimized
+
+## Running test using gnuplot:
+
+`cd ${THERMOCOMPENSATION}/example`
+
+`java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar P -g`
+
+Plots will be in
+`${THERMOCOMPENSATION}/example/P/Plot`
+
+Try long test
+
+`cd ${THERMOCOMPENSATION}/example`
+
+`java -ea -Djna.library.path=../lib -jar ../java/intopt/target/intopt-0.1-SNAPSHOT-jar-with-dependencies.jar 160202-GOLD-40+70 -s1 -g`
+
+## Excepted logs
+Logs of previous runs are in
+
+`${THERMOCOMPENSATION}/example/P/P.log`
+
+`${THERMOCOMPENSATION}/example/150601V15/s1.log`
+
+`${THERMOCOMPENSATION}/example/150601V15/s2.log`
 

@@ -1,0 +1,1 @@
+;; cert-flags: ? t :ttags (:aig-vars :fast-alist-pop :fast-cons-memo :hash-stobjs :redef+ :oslib :tshell :quicklisp :quicklisp.shellpool :satlink :swap-elab-mods)
