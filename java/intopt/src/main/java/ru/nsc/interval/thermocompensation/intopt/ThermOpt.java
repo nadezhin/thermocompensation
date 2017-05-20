@@ -2,30 +2,80 @@ package ru.nsc.interval.thermocompensation.intopt;
 
 import net.java.jinterval.interval.set.SetInterval;
 import net.java.jinterval.interval.set.SetIntervalContext;
+import net.java.jinterval.interval.set.SetIntervalEvaluator;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
 public class ThermOpt {
-
     PriorityQueue<ResultHolderElement> resultHolder = new PriorityQueue<>(new DifferenceComparator());
-    private final SetInterval[] initialBox;
-    private final SetIntervalContext ic;
-    private final double eps;
-    private final IntervalModel im;
+    private SetInterval[] initialBox;
+    private SetIntervalContext ic;
+    private double[] temp;
+    private double[] u;
+    private double eps;
+    private SetIntervalEvaluator setEv;
 
-    ThermOpt(IntervalModel im, double eps, SetIntervalContext ic) {
-        this.im = im;
-        initialBox = im.getTopBox();
+    ThermOpt(SetInterval[] box, double[] temp, double[] u, double eps, SetIntervalContext ic) {
+        initialBox = box;
+        this.temp = temp;
+        this.u = u;
         this.eps = eps;
         this.ic = ic;
+        setEv = SetIntervalEvaluator.create(ic, Functions.getList(), Functions.getObjective());
         resultHolder.add(optimizationStep(initialBox));
     }
 
-    private ResultHolderElement optimizationStep(SetInterval[] box) {
-        SetInterval obj = im.eval(box);
-        return new ResultHolderElement(box, obj.doubleInf(), obj.doubleSup());
+    private final ResultHolderElement optimizationStep(SetInterval[] box) {
+        double differenceBtwU;
+        double maxDifferenceMag = 0;
+        double maxDifferenceMig = 0;
+        SetInterval uIntval;
+        for (int i = 0; i < temp.length; i++) {
+            SetInterval[] boxAndTmp = new SetInterval[box.length + 1];
+            System.arraycopy(box, 0, boxAndTmp, 0, box.length);
+            boxAndTmp[box.length] = ic.numsToInterval(temp[i], temp[i]);
+            uIntval = setEv.evaluate(boxAndTmp)[0];
+            if (uIntval.doubleInf() > 4095) {
+                uIntval = ic.numsToInterval(4095, 4095);
+            } else {
+                if (uIntval.doubleSup() > 4095) {
+                    uIntval = ic.numsToInterval(uIntval.doubleInf(), 4095);
+                }
+            }
+            if (uIntval.doubleSup() < 0) {
+                uIntval = ic.numsToInterval(0, 0);
+            } else {
+                if (uIntval.doubleInf() < 0) {
+                    uIntval = ic.numsToInterval(0, uIntval.doubleSup());
+                }
+            }
+            uIntval = ic.sub(uIntval, ic.numsToInterval(u[i], u[i]));
+            if (ic.intersection(uIntval, ic.numsToInterval(0, 0)).isEmpty()) {
+                differenceBtwU = Math.min(Math.abs(uIntval.doubleInf()), Math.abs(uIntval.doubleSup()));
+            } else {
+                differenceBtwU = 0;
+            }
+            if (maxDifferenceMig <= differenceBtwU) {
+                maxDifferenceMig = differenceBtwU;
+                maxDifferenceMag = Math.max(Math.abs(uIntval.doubleInf()), Math.abs(uIntval.doubleSup()));
+            }
+            maxDifferenceMig = Math.max(differenceBtwU, maxDifferenceMig);
+        }
+        return new ResultHolderElement(box, maxDifferenceMig, maxDifferenceMag);
     }
+
+    /*private SetInterval intervalToPointFlooring(SetInterval intval) {
+        if (Math.floor(intval.doubleInf()) == Math.floor(intval.doubleSup())) {
+            if (intval.doubleInf() != Math.floor(intval.doubleInf())) {
+                return null;
+            } else {
+                return ic.numsToInterval(intval.inf(), intval.inf());
+            }
+        } else {
+            return ic.numsToInterval(Math.floor(intval.doubleSup()), Math.floor(intval.doubleSup()));
+        }
+    }*/
 
     public int[] startOptimization() {
         int[] result = new int[initialBox.length];
@@ -33,11 +83,8 @@ public class ThermOpt {
         double maxWidth;
         SetInterval[] currentBox;
         double supOfGlobalOptimum = Double.POSITIVE_INFINITY;
-        int cnt = 0;
         while ((supOfGlobalOptimum - resultHolder.peek().getMinDifferenceBtwU()) > eps) {
-            if (++cnt % 100000 == 0) {
-                System.out.println(cnt + ":[" + resultHolder.peek().getMinDifferenceBtwU() + "," + supOfGlobalOptimum + "]");
-            }
+//            System.out.println(resultHolder.peek().getMinDifferenceBtwU());
             currentBox = resultHolder.poll().getRecordBox();
             numbOfWidest = 0;
             maxWidth = currentBox[0].doubleWid();
@@ -65,13 +112,24 @@ public class ThermOpt {
             for (int i = 0; i < midBox.length; i++) {
                 midBox[i] = ic.numsToInterval(Math.floor(midBox[i].doubleMid()), Math.floor(midBox[i].doubleMid()));
             }
-            double currentSupOfGlobalOptimum = optimizationStep(midBox).getMaxDifferenceBtwU();
+            double currentSupOfGlobalOptimum = optimizationStep(midBox).getMinDifferenceBtwU();
             if (currentSupOfGlobalOptimum < supOfGlobalOptimum) {
                 supOfGlobalOptimum = currentSupOfGlobalOptimum;
                 for (int i = 0; i < result.length; i++) {
-                    result[i] = (int) midBox[i].doubleSup();
+                    result[i] = (int) midBox[i].doubleInf();
                 }
             }
+            /*if (maxWidth < 2) {
+                firstBox[numbOfWidest] = intervalToPointFlooring(firstBox[numbOfWidest]);
+                secondBox[numbOfWidest] = intervalToPointFlooring(secondBox[numbOfWidest]);
+                if (firstBox[numbOfWidest] != null) {
+                    optimizationStep(firstBox);
+                }
+                if (secondBox[numbOfWidest] != null) {
+                    optimizationStep(secondBox);
+                }
+                continue;
+            }*/
         }
         for (int i = 0; i < result.length; i++) {
             System.out.print(result[i] + " ");
@@ -88,14 +146,12 @@ public class ThermOpt {
 }
 
 class DifferenceComparator implements Comparator<ResultHolderElement> {
-
     public int compare(ResultHolderElement el1, ResultHolderElement el2) {
         return Double.valueOf(el1.getMinDifferenceBtwU()).compareTo(el2.getMinDifferenceBtwU());
     }
 }
 
 class ResultHolderElement {
-
     private SetInterval[] recordBox;
     private double minDifferenceBtwU;
     private double maxDifferenceBtwU;

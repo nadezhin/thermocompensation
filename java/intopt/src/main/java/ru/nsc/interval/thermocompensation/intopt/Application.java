@@ -3,263 +3,148 @@ package ru.nsc.interval.thermocompensation.intopt;
 import net.java.jinterval.interval.set.SetInterval;
 import net.java.jinterval.interval.set.SetIntervalContext;
 import net.java.jinterval.interval.set.SetIntervalContexts;
-import ru.nsc.interval.thermocompensation.model.AdcRange;
-import ru.nsc.interval.thermocompensation.model.ChipModel;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.List;
+import net.java.jinterval.expression.Expression;
+import net.java.jinterval.interval.set.SetIntervalOps;
+import net.java.jinterval.rational.ExtendedRational;
+import net.java.jinterval.rational.ExtendedRationalContexts;
+import net.java.jinterval.rational.ExtendedRationalOps;
+import net.java.jinterval.rational.Rational;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps.ExtendedInp;
+import ru.nsc.interval.thermocompensation.model.PolyModel;
 import ru.nsc.interval.thermocompensation.model.PolyState;
-import ru.nsc.interval.thermocompensation.optim.Optim;
-import ru.nsc.interval.thermocompensation.show.ChipShow;
-
-import java.io.PrintWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.Writer;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import ru.nsc.interval.thermocompensation.optim.ChipPoints;
+import ru.nsc.interval.thermocompensation.optim.Meas;
 
 public class Application {
 
-    static SetIntervalContext ic = null;
-    static double eps = 1e-5;
-    static boolean gnuplot = false;
-    static final int ADC_MAX = 4095;
-    static final int ADC_MIN = 0;
-    static final int DAC_MAX = 4095;
-    static final int DAC_MIN = 0;
+    static SetIntervalContext ic = SetIntervalContexts.getPlain();
+    static Rational minU = Rational.valueOf(0);
+    static Rational maxU = Rational.valueOf(4095);
 
-    private static void printChip(IntervalPolyModel ipm, int chipNo, Map<IntervalPolyModel, List<IntervalModel>> allModels)
-            throws IOException, InterruptedException {
-        IntervalModel chip = allModels.get(ipm).get(chipNo);
-        int CC = chip.getCC();
-        int CF = chip.getCF();
-        double F0 = chip.getF0();
-        ChipModel chipModel = chip.getThermoFreqModel();
-        int[] DIG_TEMP = chipModel.getAdcOuts();
-        double f_inf, f_sup, freqDifference;
-
-        File outputData = new File("outputData");
-        outputData.mkdir();
-
-        Writer writer = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(outputData.getName() + "/N_" + (chipNo + 1) + ".txt"), "utf-8"));
-
-        for (int i = 0; i < DIG_TEMP.length; i++) {
-            for (int dac = DAC_MIN; dac < DAC_MAX; dac++) {
-                f_inf = chipModel.getLowerModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
-                f_sup = chipModel.getUpperModelFfromAdcOut(CC, CF, dac, DIG_TEMP[i]);
-
-                freqDifference = Math.max(Math.abs(f_sup - F0), Math.abs(f_inf - F0));
-                writer.write(DIG_TEMP[i] + "; " + dac + "; " + freqDifference + ";\n");
+    private static void checkChip(ChipPoints chipPoints) throws IOException {
+        int chipNo = 0;
+        Meas[] measures = chipPoints.getMeasures();
+        try (BufferedReader fileReader = new BufferedReader(new FileReader("../java/intopt/input.txt"))) {
+            double[] temp = new double[13];
+            double[] u = new double[13];
+            for (int i = 0; i < 13; i++) {
+                String[] tmp = fileReader.readLine().split(";");
+                temp[i] = Double.parseDouble(tmp[0]);
+                u[i] = Double.parseDouble(tmp[1]);
+                Meas meas = measures[i];
+                assert meas.chipNo == chipNo;
+                assert meas.adcOut == temp[i];
+                assert meas.dacInp == u[i];
             }
         }
-        writer.close();
     }
 
-    private static void doChip(String plotDirName, IntervalPolyModel ipm, int chipNo,
-            Map<IntervalPolyModel, List<IntervalModel>> models) throws IOException, InterruptedException {
-        long startTime;
-        IntervalModel chip = models.get(ipm).get(chipNo);
-        System.out.println("Chip " + (chipNo + 1) + " f0=" + chip.getF0() + " CC=" + chip.getCC() + " CF=" + chip.getCF());
+    private static void doChip(int chipNo, ChipPoints[] data, List<List<ExtendedInp>> results, boolean print) {
+        ChipPoints chipPoints = data[chipNo];
+        Meas[] measures = chipPoints.getMeasures();
+        PolyState.Inp heuristicInp = results.get(chipNo).get(0).inp;
+        double[] temp = new double[13];
+        double[] u = new double[13];
+        for (int i = 0; i < 13; i++) {
+            Meas meas = measures[i];
+            assert meas.chipNo == chipNo;
+            temp[i] = meas.adcOut;
+            u[i] = meas.dacInp;
+        }
 
-        // Interval optimization
-        startTime = System.currentTimeMillis();
-        ThermOpt program = new ThermOpt(chip, eps, ic);
+        SetInterval INFBIT = ic.numsToInterval(0, 63);
+        SetInterval SBIT = ic.numsToInterval(0, 31);
+        SetInterval K1BIT = ic.numsToInterval(1, 255);
+        SetInterval K2BIT = ic.numsToInterval(0, 127);
+        SetInterval K3BIT = ic.numsToInterval(0, 31);
+        SetInterval K4BIT = ic.numsToInterval(0, 31);
+        SetInterval K5BIT = ic.numsToInterval(0, 15);
+
+        SetInterval[] box = new SetInterval[]{INFBIT, SBIT, K1BIT, K2BIT, K3BIT, K4BIT, K5BIT};
+
+        double eps = 1E-5;
+
+        ThermOpt program = new ThermOpt(box, temp, u, eps, ic);
         int[] result = program.startOptimization();
-        PolyState.Inp intervalInp = chip.pointAsInp(result);
-        System.out.println(((System.currentTimeMillis() - startTime + 999) / 1000) + " sec");
+        PolyState.Inp intervalInp = PolyState.Inp.genNom();
+        intervalInp.INF = result[0];
+        intervalInp.SBIT = result[1];
+        intervalInp.K1BIT = result[2];
+        intervalInp.K2BIT = result[3];
+        intervalInp.K3BIT = result[4];
+        intervalInp.K4BIT = result[5];
+        intervalInp.K5BIT = result[6];
+        ExtendedRational[] args = new ExtendedRational[result.length + 1];
+        for (int i = 0; i < result.length; i++) {
+            args[i] = Rational.valueOf(result[i]);
+        }
 
-        // Heuristic optimization
-        startTime = System.currentTimeMillis();
-        ByteArrayOutputStream ba = new ByteArrayOutputStream();
-        PrintWriter out = new PrintWriter(ba);
-        Optim.Record record = Optim.optimF(out, chip.getThermoFreqModel(),
-                chip.getCC(), chip.getCF(), new AdcRange(ADC_MIN, ADC_MAX), chip.getF0());
-        PolyState.Inp heuristicInp = record.inp;
-        System.out.println(record.inp.toNom() + " +-" + record.bestDiff / record.targetF * 1e6);
-        out.close();
-        ba.close();
-        System.out.println(((System.currentTimeMillis() - startTime + 999) / 1000) + " sec");
+        Expression expr = Functions.getObjective();
 
-        // Plot and print
-        if (gnuplot) {
-            showChip(plotDirName, chipNo, models, heuristicInp, intervalInp);
+        int maxHeuristic = 0;
+        int maxInterval = 0;
+        ExtendedRational maxIdeal = Rational.zero();
+        SetInterval diffBounds = SetIntervalOps.empty();
+        for (Meas meas : measures) {
+            int adcOut = meas.adcOut;
+            int required = meas.dacInp;
+            heuristicInp.T = intervalInp.T = adcOut;
+            args[result.length] = Rational.valueOf(adcOut);
+            int heuristicResult = PolyModel.compute(heuristicInp);
+            int intervalResult = PolyModel.compute(intervalInp);
+            ExtendedRational idealResult = ExtendedRationalContexts.evaluateRational(
+                    ExtendedRationalContexts.exact(),
+                    expr.getCodeList(),
+                    args,
+                    expr)[0];
+            idealResult
+                    = ExtendedRationalOps.min(ExtendedRationalOps.max(idealResult, minU), maxU);
+            int heuristicErr = heuristicResult - required;
+            int intervalErr = intervalResult - required;
+            ExtendedRational idealErr = ExtendedRationalOps.sub(idealResult, Rational.valueOf(required));
+            ExtendedRational diff = ExtendedRationalOps.sub(idealResult, Rational.valueOf(intervalResult));
+            maxHeuristic = Math.max(maxHeuristic, Math.abs(heuristicErr));
+            maxInterval = Math.max(maxInterval, Math.abs(intervalErr));
+            maxIdeal = ExtendedRationalOps.max(maxIdeal, ExtendedRationalOps.abs(idealErr));
+            diffBounds = SetIntervalOps.convexHull(diffBounds, SetIntervalOps.nums2(diff, diff));
+            if (print) {
+                System.out.println("  temp=" + adcOut
+                        + "\trequired=" + required
+                        + "\theuristic=" + heuristicResult + "(" + heuristicErr + ")"
+                        + " \tinterval=" + intervalResult + "(" + intervalErr + ")"
+                        + "\tideal=" + idealResult.doubleValue() + "(" + idealErr.doubleValue() + ")"
+                        + "\tdiff=" + diff.doubleValue());
+            }
         }
-        for (IntervalPolyModel m : IntervalPolyModel.values()) {
-            System.out.println(m.getAbbrev() + " interval : " + models.get(m).get(chipNo).evalMaxPpm(intervalInp));
-        }
-        for (IntervalPolyModel m : IntervalPolyModel.values()) {
-            System.out.println(m.getAbbrev() + " heuristic: " + models.get(m).get(chipNo).evalMaxPpm(heuristicInp));
-        }
+        System.out.println("Chip " + (chipNo + 1));
+        System.out.println("heuristic: " + heuristicInp.toLongNom() + "\t" + maxHeuristic);
+        System.out.println("interval:  " + intervalInp.toLongNom() + "\t" + maxInterval);
+        System.out.println("ideal:     " + intervalInp.toLongNom() + "\t" + maxIdeal.doubleValue());
+        System.out.println("diffBounds: [" + diffBounds.doubleInf() + "," + diffBounds.doubleSup() + "]");
         System.out.println("-------");
     }
 
-    private static void showChip(String plotDirName, int chipNo,
-            Map<IntervalPolyModel, List<IntervalModel>> models,
-            PolyState.Inp heuristicInp, PolyState.Inp intervalInp) throws IOException, InterruptedException {
-        String plotName = "plot";
-        String chipName = "" + (chipNo + 1);
-
-        File plotDir = new File(plotDirName);
-        plotDir.mkdir();
-        ChipShow chipShow = new ChipShow(plotName, plotDir, true);
-        chipShow.startPdf(
-                chipName + "ppm",
-                "Отклонение компенсированной частоты " + chipName,
-                "Датчик температуры",
-                "Отклонение компенсированной частоты (ppm)",
-                "%.1f");
-        for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
-            if (ipm != IntervalPolyModel.MANUFACTURED) {
-                continue;
-            }
-            IntervalModel model = models.get(ipm).get(chipNo);
-            showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " interval  ", model, intervalInp);
-        }
-        for (IntervalPolyModel ipm : IntervalPolyModel.values()) {
-            if (ipm != IntervalPolyModel.MANUFACTURED) {
-                continue;
-            }
-            IntervalModel model = models.get(ipm).get(chipNo);
-            showModelInpIntervalPpm(chipShow, ipm.getAbbrev() + " heuristic ", model, heuristicInp);
-        }
-        chipShow.closePdf();
-        chipShow.closeAndRunGnuplot();
-    }
-
-    private static void showModelInpIntervalPpm(ChipShow chipShow, String modelName, IntervalModel chipModel, PolyState.Inp inp) throws IOException {
-        int[] temp = chipModel.getTemps();
-        SetInterval[] ppm = chipModel.evalPpm(inp, temp);
-        double[] x = new double[temp.length];
-        double[] lowerY = new double[temp.length];
-        double[] upperY = new double[temp.length];
-        for (int i = 0; i < temp.length; i++) {
-            x[i] = temp[i];
-            lowerY[i] = ppm[i].doubleInf();
-            upperY[i] = ppm[i].doubleSup();
-        }
-        modelName += " " + inp.toNom();
-        modelName += " " + Math.ceil(chipModel.evalMaxPpm(inp) * 100) / 100 + "ppm";
-        chipShow.withLines(x, lowerY, modelName + " снизу");
-        chipShow.withLines(x, upperY, modelName + " сверху");
-    }
-
-    private static void help() {
-        System.out.println("Usage: java -ea -Djna.library.path=../lib -jar intoptXXX.jar dir [-print] [-sN] [-ideal] [-eD] [-nN] [-g] [-p]");
-        System.out.println("  -print - prints table of (T, u, max(|f_inf-f0|, |f_sup-f0|)) for all chips if no chip number specified");
-        System.out.println("  -sN stage N   - N=1 or N=2");
-        System.out.println("  -ideal  IDEAL model");
-        System.out.println("  -spec   SPECIFIED model");
-        System.out.println("  -manuf  MANUFACTURED model");
-        System.out.println("  -eD value of eps");
-        System.out.println("  -nN only chip N");
-        System.out.println("  -g gnuplot graphs");
-        System.out.println("  -p  use plain context");
-        System.out.println("examples:");
-        System.out.println(" P");
-        System.out.println(" 150616V15 -s1 -g");
-        System.out.println(" 150601V15 -s1 -e0.1 -p");
-        System.exit(0);
-    }
-
-    public static void main(String[] args) throws Exception {
-        IntervalPolyModel ipm = IntervalPolyModel.SPECIFIED;
-        int stage = 0;
-        int chipNo = -1;
-        boolean printOnly = false;
-        List<String> argsList = new ArrayList<String>();
-        for (String arg : args) {
-            System.out.print(" " + arg);
-            if (arg.startsWith("-")) {
-                if (arg.equals("-print")) {
-                    printOnly = true;
-                } else if (arg.equals("-ideal")) {
-                    ipm = IntervalPolyModel.IDEAL;
-                } else if (arg.equals("-spec")) {
-                    ipm = IntervalPolyModel.SPECIFIED;
-                } else if (arg.equals("-manuf")) {
-                    ipm = IntervalPolyModel.MANUFACTURED;
-                } else if (arg.startsWith("-s")) {
-                    stage = Integer.parseInt(arg.substring(2));
-                    if (stage < 1 || stage > 2) {
-                        help();
-                    }
-                } else if (arg.startsWith("-e")) {
-                    eps = Double.parseDouble(arg.substring(2));
-                } else if (arg.startsWith("-n")) {
-                    chipNo = Integer.parseInt(arg.substring(2)) - 1;
-                    if (chipNo < 0 || chipNo >= 64) {
-                        help();
-                    }
-                } else if (arg.startsWith("-g")) {
-                    gnuplot = true;
-                } else if (arg.startsWith("-p")) {
-                    ic = SetIntervalContexts.getPlain();
-                } else {
-                    help();
-                }
-            } else {
-                argsList.add(arg);
-            }
-        }
-        System.out.println();
-        if (argsList.size() != 1) {
-            help();
-        }
-        if (ic == null) {
-            ic = SetIntervalContexts.getDefault();
-        }
-
-        String dir = argsList.get(0);
-        if (!dir.isEmpty() && !dir.endsWith("/")) {
-            dir = dir + "/";
-        }
-        String plotDir;
-        Map<IntervalPolyModel, List<IntervalModel>> allModels;
-        List<List<ExtendedInp>> inps, tasks;
-        switch (stage) {
-            case 0:
-                plotDir = dir + "Plot/";
-                allModels = IntervalModel.readCsvModels(dir + "P.csv", ic);
-                inps = null;
-                break;
-            case 1:
-                plotDir = dir + "Plot1/";
-                inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "nom_inps.txt"));
-                tasks = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
-                allModels = IntervalModel.readTF0Models(dir + "m1", inps, tasks, ic);
-                break;
-            case 2:
-                plotDir = dir + "Plot2/";
-                inps = tasks = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
-                allModels = IntervalModel.readTF0Models(dir + "m2", inps, tasks, ic);
-                break;
-            default:
-                throw new AssertionError();
-        }
-        List<IntervalModel> models = allModels.get(ipm);
-        if (chipNo >= 0) {
-            if (printOnly) {
-                printChip(ipm, chipNo, allModels);
-            } else {
-                doChip(plotDir, ipm, chipNo, allModels);
-            }
+    public static void main(String[] args) throws IOException {
+        String name = "P";
+        ChipPoints[] data = ChipPoints.readChipPoints(new File(name + ".csv"));
+        List<List<ExtendedInp>> results = ParseTestInps.parseLogExtendedInps(Paths.get(name + ".opt"));
+        checkChip(data[0]);
+        if (true) {
+            doChip(3, data, results, true);
         } else {
-            for (chipNo = 0; chipNo < models.size(); chipNo++) {
-                if (models.get(chipNo) == null) {
+            for (int chipNo = 0; chipNo < data.length; chipNo++) {
+                if (chipNo >= data.length || data[chipNo] == null || chipNo >= results.size()) {
                     continue;
                 }
-                if (printOnly) {
-                    printChip(ipm, chipNo, allModels);
-                } else {
-                    doChip(plotDir, ipm, chipNo, allModels);
-                }
+                doChip(chipNo, data, results, true);
             }
         }
     }

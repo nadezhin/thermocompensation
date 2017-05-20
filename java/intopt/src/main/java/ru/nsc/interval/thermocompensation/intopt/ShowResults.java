@@ -8,7 +8,8 @@ import ru.nsc.interval.thermocompensation.model.ParseTestInps;
 import ru.nsc.interval.thermocompensation.model.ParseTestInps.ExtendedInp;
 import ru.nsc.interval.thermocompensation.model.PolyModel;
 import ru.nsc.interval.thermocompensation.model.PolyState;
-import ru.nsc.interval.thermocompensation.model.ChipPoints;
+import ru.nsc.interval.thermocompensation.optim.ChipPoints;
+import ru.nsc.interval.thermocompensation.optim.Meas;
 
 /**
  *
@@ -24,31 +25,23 @@ public class ShowResults {
                 continue;
             }
             ChipPoints chipPoints = data[chipNo];
-            double f0 = chipPoints.getF0();
-            int[] adcOuts = chipPoints.getAdcOuts();
+            Meas[] measures = chipPoints.getMeasures();
             List<ExtendedInp> einps = results.get(chipNo);
-            System.out.println("Chip " + (chipNo + 1) + " f0=" + f0);
+            System.out.println("Chip " + (chipNo + 1));
             for (ExtendedInp einp : einps) {
                 PolyState.Inp inp = einp.inp;
                 double df = einp.df;
                 System.out.println(inp.toLongNom() + "   # df=" + df);
-                int cc = inp.CC;
-                int cf = inp.CF;
-                double fInfAll = Double.MAX_VALUE;
-                double fSupAll = -Double.MAX_VALUE;
-                for (int adcOut: adcOuts) {
-                    inp.T = adcOut;
-                    int dacInp = PolyModel.compute(inp);
-                    double fInf = chipPoints.getLowerModelFfromAdcOut(cc, cf, dacInp, adcOut);
-                    double fSup = chipPoints.getUpperModelFfromAdcOut(cc, cf, dacInp, adcOut);
-                    fInfAll = Math.min(fInfAll, fInf);
-                    fSupAll = Math.max(fSupAll, fSup);
-                    System.out.println("  adcOut=" + adcOut
-                            + "\tdacInp=" + dacInp
-                            + "\tf=[" + fInf + "," + fSup + "]"
-                            + "\tdf=[" + (fInf - f0) + "," + (fSup - f0) + "]");
+                for (Meas meas : measures) {
+                    int temp = meas.adcOut;
+                    double required = meas.dacInp;
+                    inp.T = temp;
+                    int result = PolyModel.compute(inp);
+                    System.out.println("  temp=" + temp
+                            + "\tcomputed=" + result
+                            + "\trequired=" + required
+                            + "\tdiff=" + (result - required));
                 }
-                System.out.println("df=[" + (fInfAll - f0) + "," + (fSupAll - f0) + "]");
             }
         }
     }

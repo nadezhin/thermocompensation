@@ -35,10 +35,6 @@
             <artifactId>jinterval-interval-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>net.java.jinterval</groupId>
-            <artifactId>jinterval-ils</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
         </dependency>
@@ -52,17 +48,14 @@
                 <version>1.5.0</version>
                 <configuration>
                     <executable>java</executable>
-                    <workingDirectory>../../example/150601V15</workingDirectory>
+                    <workingDirectory>../../example</workingDirectory>
                     <arguments>
                         <argument>-ea</argument>
-                        <argument>-Djna.library.path=../../lib</argument>
+                        <argument>-Djna.library.path=../lib</argument>
                         <argument>-classpath</argument>
                         <classpath/>
-                        <argument>ru.nsc.interval.thermocompensation.optim.ChipRefineStdMulti</argument>
-                        <argument>m1_t.txt</argument>
-                        <argument>m1_f0.txt</argument>
-                        <argument>nom_inps.txt</argument>
-                        <argument>-f12000000</argument>
+                        <argument>ru.nsc.interval.thermocompensation.optim.ChipPoints</argument>
+                        <argument>P.csv</argument>
                     </arguments>
                 </configuration>
             </plugin>

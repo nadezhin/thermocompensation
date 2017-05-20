@@ -23,7 +23,7 @@
         <module>model</module>
         <module>glpk-jna</module>
         <module>optim</module>
-        <module>intopt</module>
+	<module>intopt</module>
     </modules>
 
     <dependencies>
@@ -40,11 +40,6 @@
             <dependency>
                 <groupId>net.java.jinterval</groupId>
                 <artifactId>jinterval-interval-java</artifactId>
-                <version>0.1-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>net.java.jinterval</groupId>
-                <artifactId>jinterval-ils</artifactId>
                 <version>0.1-SNAPSHOT</version>
             </dependency>
             <dependency>

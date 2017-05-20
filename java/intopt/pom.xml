@@ -39,28 +39,6 @@
     <build>
         <plugins>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>ru.nsc.interval.thermocompensation.intopt.Application</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.5.0</version>
@@ -69,11 +47,10 @@
                     <workingDirectory>../../example</workingDirectory>
                     <arguments>
                         <argument>-ea</argument>
-                        <argument>-Djna.library.path=../lib</argument>
                         <argument>-classpath</argument>
                         <classpath/>
                         <argument>ru.nsc.interval.thermocompensation.intopt.Application</argument>
-                        <argument>P</argument>
+                        <argument>P.csv</argument>
                     </arguments>
                 </configuration>
             </plugin>

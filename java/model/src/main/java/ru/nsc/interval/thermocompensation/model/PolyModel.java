@@ -38,7 +38,6 @@ public class PolyModel {
         SetIntervalOps.nums2(0, 15)
     };
     public static int DEBUG = 0;
-    private static final boolean NEW_COMPUTE = false;
     private final PolyState s0 = new PolyState();
     private final PolyState s1 = new PolyState();
     /**
@@ -111,30 +110,6 @@ public class PolyModel {
             this.result = result;
             this.p1 = p1;
             this.p2 = p2;
-        }
-
-        public long getResult() {
-            return result;
-        }
-
-        int getP() {
-            return p1 + p2;
-        }
-
-        void check(ProductResult that) {
-            assert this.result == that.result;
-            assert this.p1 == that.p1;
-            assert this.p2 == that.p2;
-        }
-
-        void check(long uprod, int prec, boolean fixBugP) {
-            assert uprod >= 0 && uprod < (3L << prec);
-            assert result == uprod << (64 - prec) >> (64 - prec);
-            if (fixBugP) {
-                assert p1 == 0 && p2 == 0;
-            } else {
-                assert p1 + p2 == uprod >> prec;
-            }
         }
     }
 
@@ -311,73 +286,6 @@ public class PolyModel {
         s0.posedge(inp, s1, fixBugP);
         resultOut = (res6 < 0 ? 0 : res6 >= (1L << 12) ? 4095 : (int) res6);
         assert s0.RESULTout == resultOut;
-    }
-
-    /**
-     * Behavior model of the polynomial evaluator.
-     *
-     * @param inp input with coefficients and temperature
-     * @param fixBugP fix the bug
-     * @return result of computation
-     *
-     */
-    public static PolyModel computePolyModel(PolyState.Inp inp, boolean fixBugP) {
-        inp.ENwork = 1;
-        return new PolyModel(inp, fixBugP);
-    }
-
-    /**
-     * Return P0 garbage carryout.
-     *
-     * @return P0
-     */
-    public int getP0() {
-        return fixBugP ? 0 : prinf.getP();
-    }
-
-    /**
-     * Return P1 garbage carryout.
-     *
-     * @return P1
-     */
-    public int getP1() {
-        return fixBugP ? 0 : prs.getP();
-    }
-
-    /**
-     * Return P2 garbage carryout.
-     *
-     * @return P2
-     */
-    public int getP2() {
-        return fixBugP ? 0 : pr4.getP();
-    }
-
-    /**
-     * Return P3 garbage carryout.
-     *
-     * @return P3
-     */
-    public int getP3() {
-        return fixBugP ? 0 : pr3.getP();
-    }
-
-    /**
-     * Return P4 garbage carryout.
-     *
-     * @return P4
-     */
-    public int getP4() {
-        return fixBugP ? 0 : pr2.getP();
-    }
-
-    /**
-     * Return P5 garbage carryout.
-     *
-     * @return P5
-     */
-    public int getP5() {
-        return fixBugP ? 0 : pr1.getP();
     }
 
     /**
@@ -565,8 +473,6 @@ public class PolyModel {
             int cntm = cntm0 - i;
             long oldPartial = acc0 + mult * xs;
             long oldAcc = oldPartial >> i;
-            long rest = r - mult;
-            assert rest == (i == 0 ? r : (r + (1L << (i - 1)) >> i << i));
             mult += ((long) mults[i]) << i;
             if (DEBUG >= 2) {
                 System.out.println("oldAcc=" + Long.toString(oldAcc, 16));
@@ -584,12 +490,6 @@ public class PolyModel {
             int newP1 = fixBugP && cntm == 0 ? 0 : (((newProd & mask) + (a1 & mask) + prevP1) & ~mask) != 0 ? 1 : 0;
             int newP2 = fixBugP && cntm == 0 ? 0 : (((newS1 & mask) + (a2 & mask) + prevP2) & ~mask) != 0 ? 1 : 0;
             int entrig = cntp == 0 && cntm == 34 ? 0 : 1;
-            assert newR == (s1.RESULT >> (35 - i))
-                    + (((long) (s1.P1 + s1.P2)) << i)
-                    + (((long) a1) >> i << i)
-                    + (((long) a2) >> i << i)
-                    + (((long) s1.WORK) << 51 >> (51 - i))
-                    + rest * xs;
             partialSum(entrig, cntp, cntm, cntd, (int) oldAcc,
                     oldXs, mults[i],
                     oldRes, newRes,
@@ -615,7 +515,6 @@ public class PolyModel {
             int newRes2 = 0;
             int newP1 = fixBugP ? 0 : (((newAcc & 1) + oldP1) & ~1) != 0 ? 1 : 0;
             int newP2 = fixBugP ? 0 : ((((newAcc + oldP1) & 1) + oldP2) & ~1) != 0 ? 1 : 0;
-            assert (newR == s1.RESULT + (((long) s1.WORK) << 51 >> (51 - 35)));
             partialSum(1, cntp, 0, 0, (int) oldAcc,
                     xs, mult1,
                     oldRes, newRes,
@@ -648,9 +547,6 @@ public class PolyModel {
                 int newP1 = fixBugP && cntm == 0 ? 0 : (((newProd & mask) + (a1 & mask) + prevP1) & ~mask) != 0 ? 1 : 0;
                 int newP2 = fixBugP && cntm == 0 ? 0 : (((newS1 & mask) + (a2 & mask) + prevP2) & ~mask) != 0 ? 1 : 0;
                 int entrig = cntp == 0 && cntm == 34 ? 0 : 1;
-                assert (((newR >> (i - 35)) & 0x7FFFFFFFFL)
-                        == ((s1.RESULT + (((long) s1.WORK) << 51 >> (51 - 35))) & 0x7FFFFFFFFL));
-
                 partialSum(entrig, cntp, cntm, cntd, (int) oldAcc,
                         oldXs, 0/*
                          * mults[i]
@@ -665,16 +561,6 @@ public class PolyModel {
                 oldP2 = newP2;
             }
         }
-        if (DEBUG >= 1) {
-            System.out.println("product=" + Long.toString(newR, 16) + "(" + (newR & 0x7FFFFFFFFL) + ")"
-                    + " p1=" + oldP1 + " p2=" + oldP2);
-        }
-        if (cntp == 1) {
-            assert s1.XS == ((((long) newR) >> 5) & 0x1FFF);
-        } else {
-            assert ((newR >> cntd) & 0x7FFFFFFFFL) == s1.RESULT;
-        }
-
         return new ProductResult(newR, oldP1, oldP2);
     }
 
@@ -776,22 +662,9 @@ public class PolyModel {
      * @param check self-check
      * @param fixBugP fix the bug
      * @return result of computation
+     *
      */
     public static int compute(PolyState.Inp inp, boolean check, boolean fixBugP) {
-        return NEW_COMPUTE
-                ? computeNew(inp, check, fixBugP)
-                : computeOld(inp, check, fixBugP);
-    }
-
-    /**
-     * Behavior model of the polynomial evaluator.
-     *
-     * @param inp input with coefficients and temperature
-     * @param check self-check
-     * @param fixBugP fix the bug
-     * @return result of computation
-     */
-    public static int computeOld(PolyState.Inp inp, boolean check, boolean fixBugP) {
         long diff = inp.T - (1535 + (inp.INF << 3));
         assert diff >= -1535 - 63 * 8 && diff <= 4095 - 1535;
         assert diff >= -2039 && diff <= 2560;
@@ -912,100 +785,11 @@ public class PolyModel {
         assert res6 >= -290559L && res6 <= 751493L;
         int resultOut = (res6 < 0 ? 0 : res6 >= (1L << 12) ? 4095 : (int) res6);
         if (check) {
-            PolyModel pm = computePolyModel(inp, fixBugP);
+            inp.ENwork = 1;
+            PolyModel pm = new PolyModel(inp, fixBugP);
             assert pm.prs.result == prs.result;
             assert pm.prs.p1 == prs.p1;
             assert pm.prs.p2 == prs.p2;
-        }
-        return resultOut;
-    }
-
-    /**
-     * Behavior model of the polynomial evaluator.
-     *
-     * @param inp input with coefficients and temperature
-     * @param check self-check
-     * @param fixBugP fix the bug
-     * @return result of computation
-     */
-    public static int computeNew(PolyState.Inp inp, boolean check, boolean fixBugP) {
-        long uprodf = ((inp.T - (inp.INF << 3)) & ((1L << 35) - 1))
-                + ((1L << 35) - 1535);
-        long prodf = uprodf << (64 - 35) >> (64 - 35);
-        int pf = fixBugP ? 0 : (int) (uprodf >> 35);
-        assert 0 <= pf && pf <= 1;
-        assert pf == (fixBugP
-                || inp.T >= (inp.INF << 3)
-                && inp.T < 1535 + (inp.INF << 3) ? 0 : 1);
-        assert prodf == inp.T - (1535 + (inp.INF << 3));;
-        assert prodf >= -1535 - 63 * 8 && prodf <= 4095 - 1535;
-        assert prodf >= -2039 && prodf <= 2560;
-        int scale = inp.SBIT + 0x10;
-        assert 16 <= scale && scale <= 47;
-        assert -95833 <= prodf * scale && prodf * scale <= 120320;
-        long uprods = ((prodf * scale) & ((1L << 36) - 1))
-                + 16
-                + pf;
-        long prods = uprods << (64 - 36) >> (64 - 36);
-        int ps = fixBugP ? 0 : (int) (uprods >> 36);
-        assert 0 <= ps && ps <= 1;
-        assert ps == (!fixBugP && inp.SBIT == 16 && inp.T == 1534 + (inp.INF << 8) ? 1 : 0);
-        assert -95817 <= prods && prods <= 120337;
-        int xs = (int) (prods >> 5);
-        assert xs == computeXs(inp.INF, inp.SBIT, inp.T, fixBugP);
-        assert xs >= -0x1000 && xs < 0x1000;
-        assert xs >= -2995 && xs <= 3760;
-
-        long uprod2 = ((inp.K5BIT * xs) & ((1L << 35) - 1))
-                + ((long) inp.K4BIT << 9)
-                + ((1L << 35) - (25L << 9))
-                + ps;
-        long prod2 = uprod2 << (64 - 35) >> (64 - 35);
-        int p2 = fixBugP ? 0 : (int) (uprod2 >> 35);
-        assert 0 <= p2 && p2 <= 2;
-
-        long uprod3 = ((prod2 * xs) & ((1L << 45) - 1))
-                + (((long) inp.K3BIT) << 19)
-                + (1L << 9) + (1L << 22)
-                + p2;
-        long prod3 = uprod3 << (64 - 45) >> (64 - 45);
-        int p3 = fixBugP ? 0 : (int) (uprod3 >> 45);
-        assert 0 <= p3 && p3 <= 1;
-        long res3 = prod3 >> 10;
-
-        long uprod4 = ((res3 * xs) & ((1L << 45) - 1))
-                + (((long) inp.K2BIT) << 17)
-                + (1L << 9) + (5L << 19)
-                + p3;
-        long prod4 = uprod4 << (64 - 45) >> (64 - 45);
-        int p4 = fixBugP ? 0 : (int) (uprod4 >> 45);
-        assert 0 <= p4 && p4 <= 1;
-        long res4 = prod4 >> 10;
-
-        long uprod5 = ((res4 * xs) & ((1L << 45) - 1))
-                + (((~(((long) inp.K1BIT) << 17)) & ((1L << 45) - 1))
-                + ((1L << 45) - (195L << 16)))
-                + p4;
-        long prod5 = uprod5 << (64 - 45) >> (64 - 45);
-        int p5 = fixBugP ? 0 : (int) (uprod5 >> 45);
-        assert 0 <= p5 && p5 <= 2;
-        long res5 = prod5 >> 10;
-
-        long uprod6 = ((res5 * xs) & ((1L << 49) - 1))
-                + (1L << 13) + (1032L << 14) + p5;
-        long prod6 = uprod6 << (64 - 49) >> (64 - 49);
-        long res6 = prod6 >> 14;
-
-        int resultOut = (res6 < 0 ? 0 : res6 >= (1L << 12) ? 4095 : (int) res6);
-        if (check) {
-            PolyModel pm = computePolyModel(inp, fixBugP);
-            pm.prinf.check(uprodf, 35, fixBugP);
-            pm.prs.check(uprods, 36, fixBugP);
-            pm.pr4.check(uprod2, 35, fixBugP);
-            pm.pr3.check(uprod3, 45, fixBugP);
-            pm.pr2.check(uprod4, 45, fixBugP);
-            pm.pr1.check(uprod5, 45, fixBugP);
-            pm.pr0.check(uprod6, 49, fixBugP);
             assert pm.resultOut == resultOut;
         }
         return resultOut;
@@ -1268,15 +1052,13 @@ public class PolyModel {
         } else {
             inps = Arrays.asList(Arrays.asList(PolyState.Inp.genNom()));
         }
-        DEBUG = 0;
         for (int chipNo = 0; chipNo < inps.size(); chipNo++) {
             List<PolyState.Inp> inps1 = inps.get(chipNo);
             for (PolyState.Inp inp : inps1) {
                 System.out.println((chipNo + 1) + ":" + inp.toNom());
-                for (int adcOut = 0; adcOut < 4096; adcOut++) {
-                    inp.T = adcOut;
-                    int dacInp = compute(inp, true, false);
-                    System.out.println("\t" + adcOut + "\t" + dacInp);
+                int[] dacInps = computeAll(inp);
+                for (int adcOut = 0; adcOut < dacInps.length; adcOut++) {
+                    System.out.println("\t" + adcOut + "\t" + dacInps[adcOut]);
                 }
             }
         }

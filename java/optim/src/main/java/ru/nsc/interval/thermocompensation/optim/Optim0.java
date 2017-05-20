@@ -164,6 +164,53 @@ class Optim0 {
         }
     }
 
+    private static class Basis {
+
+        final BitSet basisV;
+        final Set<Integer> basisC;
+
+        Basis(BitSet basisV, Set<Integer> basisC) {
+            this.basisV = new BitSet();
+            this.basisV.or(basisV);
+            this.basisC = new TreeSet<>(basisC);
+        }
+
+        Basis(Basis old, int rem, int add) {
+            basisV = new BitSet();
+            basisV.or(old.basisV);
+            basisC = new TreeSet<>(old.basisC);
+            if (rem >= 0) {
+                basisC.remove(rem);
+            } else {
+                basisV.clear(-rem - 1);
+            }
+            basisC.add(add);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof Basis) {
+                Basis that = (Basis) o;
+                return this.basisV.equals(that.basisV) && this.basisC.equals(that.basisC);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 97 * hash + basisV.hashCode();
+            hash = 97 * hash + basisC.hashCode();
+            return hash;
+        }
+
+        @Override
+        public String toString() {
+            return basisV + "  " + basisC;
+        }
+
+    }
+
     private double[] checkSol() {
         double[] result = new double[numVars - 1];
         Basis curBasis;
@@ -178,17 +225,26 @@ class Optim0 {
         visited.add(curBasis);
 
         for (;;) {
+            int[] basisIndex = new int[numVars];
+            int basisVC = curBasis.basisV.cardinality();
+            assert basisVC + curBasis.basisC.size() == numVars;
             RealMatrix A = new Array2DRowRealMatrix(numVars, numVars);
             RealVector b = new ArrayRealVector(numVars);
-            for (int k = 0; k < numVars; k++) {
-                int v = curBasis.index[k];
-                if (v >= 0) {
-                    A.setRowVector(k, A0.getRowVector(v));
-                    b.setEntry(k, rhs.getEntry(v));
-                } else {
-                    A.setEntry(k, -v - 1, 1);
+            int k = 0;
+            for (int i = 0; i < numVars; i++) {
+                if (curBasis.basisV.get(i)) {
+                    basisIndex[k] = -i - 1;
+                    A.setEntry(k, i, 1);
+                    k++;
                 }
             }
+            for (Integer bc : curBasis.basisC) {
+                basisIndex[k] = bc;
+                A.setRowVector(k, A0.getRowVector(bc));
+                b.setEntry(k, rhs.getEntry(bc));
+                k++;
+            }
+            assert k == numVars;
             DecompositionSolver solver = new LUDecomposition(A).getSolver();
             RealMatrix Ainv;
             try {
@@ -209,7 +265,7 @@ class Optim0 {
             double maxV = Double.NaN;
             for (int i = 0; i < numVars; i++) {
                 double v = Ainv.getEntry(numVars - 1, i);
-                if (i < curBasis.Vcard) {
+                if (i < basisVC) {
                     v = Math.abs(v);
                 }
                 if (maxI < 0 || v > maxV) {
@@ -233,20 +289,10 @@ class Optim0 {
 
             int maxUlps = 10;
             // create a list of all the rows that tie for the lowest score in the minimum ratio test
-            List<Integer> minRatioPositions = new ArrayList<>();
+            List<Integer> minRatioPositions = new ArrayList<Integer>();
             double minRatio = Double.MAX_VALUE;
-            int nextIndex = curBasis.index[0];
-            int nextK = 1;
-            while (nextIndex < 0) {
-                nextIndex = nextK < curBasis.index.length
-                        ? curBasis.index[nextK++]
-                        : Integer.MAX_VALUE;
-            }
             for (int i = 0; i < rhs.getDimension(); i++) {
-                if (i == nextIndex) {
-                    nextIndex = nextK < curBasis.index.length
-                            ? curBasis.index[nextK++]
-                            : Integer.MAX_VALUE;
+                if (curBasis.basisC.contains(i)) {
                     continue;
                 }
                 final double rhs = defect.getEntry(i);
@@ -266,11 +312,10 @@ class Optim0 {
                     }
                 }
             }
-            assert nextIndex == Integer.MAX_VALUE;
 
             Basis newBasis = null;
             for (Integer row : minRatioPositions) {
-                int excludeInd = curBasis.index[maxI];
+                int excludeInd = basisIndex[maxI];
                 Basis basis = new Basis(curBasis, excludeInd, row);
                 if (!visited.contains(basis)) {
                     newBasis = basis;

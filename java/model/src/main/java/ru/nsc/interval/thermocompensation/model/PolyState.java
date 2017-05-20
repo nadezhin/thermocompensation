@@ -646,7 +646,7 @@ public class PolyState {
         } else {
             P1 = old.P1;
         }
-        if (old.CNTS == 0 && PolyModel.DEBUG >= 4) {
+        if (old.CNTS == 0 && PolyModel.DEBUG >= 1) {
             System.out.println("m= " + m + " p=" + p + " SL=" + SL + " WORK[1]=" + bit(old.WORK, 1) + " P1=" + old.P1 + " S1=" + S1 + " P1=" + P1);
         }
 
@@ -730,7 +730,7 @@ public class PolyState {
                     case 16 + 10 - 4:
                     case 15 + 10 - 4:
                         SL2 = 0;
-                        break;//..11_0011_1101_0000_0000_0000_0000
+                        break;//..11_0011_1101_0000_0000_0000
                     default:
                         SL2 = 1;
                 }
@@ -770,7 +770,7 @@ public class PolyState {
         } else {
             P2 = old.P2;
         }
-        if (old.CNTS == 0 && PolyModel.DEBUG >= 4) {
+        if (old.CNTS == 0 && PolyModel.DEBUG >= 1) {
             System.out.println(" SL2=" + SL2 + " S1=" + S1 + " P2=" + old.P2 + " S2=" + S2 + " P2=" + P2);
         }
 
