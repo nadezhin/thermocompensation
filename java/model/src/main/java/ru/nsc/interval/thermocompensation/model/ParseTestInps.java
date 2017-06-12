@@ -1,6 +1,8 @@
 package ru.nsc.interval.thermocompensation.model;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,10 +30,23 @@ public class ParseTestInps {
         }
     }
 
+    public static void writeTestInps(File file, List<List<ExtendedInp>> inps) throws IOException {
+        try (PrintWriter out = new PrintWriter(file)) {
+            for (int chipNo = 0; chipNo < inps.size(); chipNo++) {
+                List<ExtendedInp> chipInps = inps.get(chipNo);
+                if (chipInps != null) {
+                    for (ExtendedInp inp : chipInps) {
+                        out.println((chipNo + 1) + ":" + inp.inp.toNom() + " # f = " + inp.f + " +- " + inp.df);
+                    }
+                }
+            }
+        }
+    }
+
     public static List<List<PolyState.Inp>> parseTestInps(Path path) throws IOException {
-        List<List<PolyState.Inp>> result = new ArrayList<List<PolyState.Inp>>();
+        List<List<PolyState.Inp>> result = new ArrayList<>();
         for (List<ExtendedInp> l : parseTestExtendedInps(path)) {
-            List<PolyState.Inp> r = new ArrayList<PolyState.Inp>();
+            List<PolyState.Inp> r = new ArrayList<>();
             for (ExtendedInp ei : l) {
                 r.add(ei.inp);
             }

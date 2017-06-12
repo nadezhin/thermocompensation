@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class Application2 {
     static boolean gnuplot = false;
 
     private static void doChip(String plotDirName, IntervalPolyModel ipm, int chipNo,
-            Map<IntervalPolyModel, List<IntervalModel>> models) throws IOException, InterruptedException {
+            Map<IntervalPolyModel, List<IntervalModel>> models, List<List<ExtendedInp>> results) throws IOException, InterruptedException {
         long startTime;
         final IntervalModel chip = models.get(ipm).get(chipNo);
         System.out.println("Chip " + (chipNo + 1) + " f0=" + chip.getF0() + " CC=" + chip.getCC() + " CF=" + chip.getCF());
@@ -79,6 +80,12 @@ public class Application2 {
 //            System.out.println(m.getAbbrev() + " interval : " + models.get(m).get(chipNo).evalMaxPpm(intervalInp));
 //        }
         System.out.println("-------");
+        double df = models.get(ipm).get(chipNo).evalMaxAbsDF(combinedInp).doubleSup();
+        ExtendedInp result = new ExtendedInp(combinedInp, chip.getF0(), df);
+        while (results.size() <= chipNo) {
+            results.add(null);
+        }
+        results.set(chipNo, Arrays.asList(result));
     }
 
     private static PolyState.Inp checkOptim(IntervalModel im, Optim.Record record) {
@@ -318,7 +325,7 @@ public class Application2 {
         System.out.println("  -eD value of eps");
         System.out.println("  -nN only chip N");
         System.out.println("  -g gnuplot graphs");
-        System.out.println("  -p  use plain context");
+        System.out.println("  -p use plain context");
         System.out.println("examples:");
         System.out.println(" P");
         System.out.println(" 150616V15 -s1 -g");
@@ -330,7 +337,7 @@ public class Application2 {
         IntervalPolyModel ipm = null;
         int stage = 0;
         int chipNo = -1;
-        List<String> argsList = new ArrayList<String>();
+        List<String> argsList = new ArrayList<>();
         for (String arg : args) {
             System.out.print(" " + arg);
             if (arg.startsWith("-")) {
@@ -376,22 +383,28 @@ public class Application2 {
             dir = dir + "/";
         }
         String plotDir;
+        String resultFile = "olp" + ipm.getAbbrev().toLowerCase().charAt(0);
+        // "olps" - optimization by linear programming with SPECIFIED model
+        // "olpm" - optimization by linear programming with MANUFACTURED model
         Map<IntervalPolyModel, List<IntervalModel>> allModels;
         List<List<ExtendedInp>> inps, tasks;
         switch (stage) {
             case 0:
                 plotDir = dir + "Plot/";
+                resultFile = dir + resultFile + ".txt";
                 allModels = IntervalModel.readCsvModels(dir + "P.csv", ic);
                 inps = null;
                 break;
             case 1:
                 plotDir = dir + "Plot1/";
+                resultFile = dir + resultFile + "1.txt";
                 inps = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "nom_inps.txt"));
                 tasks = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
                 allModels = IntervalModel.readTF0Models(dir + "m1", inps, tasks, ic);
                 break;
             case 2:
                 plotDir = dir + "Plot2/";
+                resultFile = dir + resultFile + "2.txt";
                 inps = tasks = ParseTestInps.parseLogExtendedInps(Paths.get(dir + "o1.txt"));
                 allModels = IntervalModel.readTF0Models(dir + "m2", inps, tasks, ic);
                 break;
@@ -399,15 +412,17 @@ public class Application2 {
                 throw new AssertionError();
         }
         List<IntervalModel> models = allModels.get(ipm);
+        List<List<ExtendedInp>> results = new ArrayList<>();
         if (chipNo >= 0) {
-            doChip(plotDir, ipm, chipNo, allModels);
+            doChip(plotDir, ipm, chipNo, allModels, results);
         } else {
             for (chipNo = 0; chipNo < models.size(); chipNo++) {
                 if (models.get(chipNo) == null) {
                     continue;
                 }
-                doChip(plotDir, ipm, chipNo, allModels);
+                doChip(plotDir, ipm, chipNo, allModels, results);
             }
         }
+        ParseTestInps.writeTestInps(new File(resultFile), results);
     }
 }
