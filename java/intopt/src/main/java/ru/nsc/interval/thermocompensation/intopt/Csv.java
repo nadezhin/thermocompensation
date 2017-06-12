@@ -2,6 +2,7 @@ package ru.nsc.interval.thermocompensation.intopt;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -91,7 +92,7 @@ public class Csv {
         }
         List<IntervalModel> specModels = allModels.get(IntervalPolyModel.SPECIFIED);
         List<IntervalModel> manufModels = allModels.get(IntervalPolyModel.MANUFACTURED);
-        try (PrintWriter out = new PrintWriter(resultFile)) {
+        try (PrintWriter out = new PrintWriter(resultFile, StandardCharsets.UTF_8.name())) {
             out.println("номер образца,выигрыш ppm,"
                     + "ppm. без корр. LP,ppm. с корр. LP,ppm. без корр. INT,ppm. с корр. INT,"
                     + "коэфф. без корр. LP,коэфф. с корр. LP,коэфф. без корр. INT,коэфф. с корр. INT");
