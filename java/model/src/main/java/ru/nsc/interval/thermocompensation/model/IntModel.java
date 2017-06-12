@@ -5,6 +5,7 @@
  */
 package ru.nsc.interval.thermocompensation.model;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
@@ -487,6 +488,102 @@ public class IntModel {
         // (((prod6-m)<<30) - (k1*K1BIT+k2*K2BIT+k3*K3BIT+k4*K4BIT+k5*K5BIT)) IN [l,u]
     }
 
+    public void check(PolyState.Inp inp, int adcOut, boolean printDebug) {
+        inp.T = adcOut;
+        PolyModel pm = PolyModel.computePolyModel(inp, fixBugP);
+        assert pm.xs == xs;
+
+        BigInteger bk1 = BigInteger.valueOf(k1);
+        BigInteger bk2 = BigInteger.valueOf(k2);
+        BigInteger bk3 = BigInteger.valueOf(k3);
+        BigInteger bk4 = BigInteger.valueOf(k4);
+        BigInteger bk5 = BigInteger.valueOf(k5);
+        BigInteger bK1BIT = BigInteger.valueOf(inp.K1BIT);
+        BigInteger bK2BIT = BigInteger.valueOf(inp.K2BIT);
+        BigInteger bK3BIT = BigInteger.valueOf(inp.K3BIT);
+        BigInteger bK4BIT = BigInteger.valueOf(inp.K4BIT);
+        BigInteger bK5BIT = BigInteger.valueOf(inp.K5BIT);
+        
+        setMLU(inp.K1BIT, inp.K2BIT, inp.K3BIT, inp.K4BIT, inp.K5BIT);
+        assert l == 0 && u == 0;
+        assert m == pm.pr0.result;
+
+        setMLU(inp.K2BIT, inp.K3BIT, inp.K4BIT, inp.K5BIT);
+        BigInteger lin = bk1.multiply(bK1BIT);
+        long pl = lin.add(BigInteger.valueOf(l)).shiftRight(30).longValueExact() + m;
+        long pu = lin.add(BigInteger.valueOf(u)).shiftRight(30).longValueExact() + m;
+        assert pl <= pm.pr0.result;
+        assert pu >= pm.pr0.result;
+        long al = pl >> 14;
+        long au = pu >> 14;
+        if (printDebug && al != au) {
+            System.out.println("2:adcOut=" + adcOut + " xs=" + xs + " result=" + Long.toHexString(pm.pr0.result)
+                    + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
+                    + " m+l=" + Long.toHexString(al)
+                    + " m+u=" + Long.toHexString(au));
+        }
+
+        setMLU(inp.K3BIT, inp.K4BIT, inp.K5BIT);
+        lin = bk1.multiply(bK1BIT).add(bk2.multiply(bK2BIT));
+        pl = lin.add(BigInteger.valueOf(l)).shiftRight(30).longValueExact() + m;
+        pu = lin.add(BigInteger.valueOf(u)).shiftRight(30).longValueExact() + m;
+        assert pl <= pm.pr0.result;
+        assert pu >= pm.pr0.result;
+        al = pl >> 14;
+        au = pu >> 14;
+        if (printDebug && al != au) {
+            System.out.println("3:adcOut=" + adcOut + " xs=" + xs + " result=" + Long.toHexString(pm.pr0.result)
+                    + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
+                    + " m+l=" + Long.toHexString(al)
+                    + " m+u=" + Long.toHexString(au));
+        }
+
+        setMLU(inp.K4BIT, inp.K5BIT);
+        lin = bk1.multiply(bK1BIT).add(bk2.multiply(bK2BIT)).add(bk3.multiply(bK3BIT));
+        pl = lin.add(BigInteger.valueOf(l)).shiftRight(30).longValueExact() + m;
+        pu = lin.add(BigInteger.valueOf(u)).shiftRight(30).longValueExact() + m;
+        assert pl <= pm.pr0.result;
+        assert pu >= pm.pr0.result;
+        al = pl >> 14;
+        au = pu >> 14;
+        if (printDebug && al != au) {
+            System.out.println("4:adcOut=" + adcOut + " xs=" + xs + " result=" + Long.toHexString(pm.pr0.result)
+                    + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
+                    + " m+l=" + Long.toHexString(al)
+                    + " m+u=" + Long.toHexString(au));
+        }
+
+        setMLU(inp.K5BIT);
+        lin = bk1.multiply(bK1BIT).add(bk2.multiply(bK2BIT)).add(bk3.multiply(bK3BIT)).add(bk4.multiply(bK4BIT));
+        pl = lin.add(BigInteger.valueOf(l)).shiftRight(30).longValueExact() + m;
+        pu = lin.add(BigInteger.valueOf(u)).shiftRight(30).longValueExact() + m;
+        assert pl <= pm.pr0.result;
+        assert pu >= pm.pr0.result;
+        al = pl >> 14;
+        au = pu >> 14;
+        if (printDebug && al != au) {
+            System.out.println("5:adcOut=" + adcOut + " xs=" + xs + " result=" + Long.toHexString(pm.pr0.result)
+                    + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
+                    + " m+l=" + Long.toHexString(al)
+                    + " m+u=" + Long.toHexString(au));
+        }
+
+        setMLU();
+        lin = bk1.multiply(bK1BIT).add(bk2.multiply(bK2BIT)).add(bk3.multiply(bK3BIT)).add(bk4.multiply(bK4BIT)).add(bk5.multiply(bK5BIT));
+        pl = lin.add(BigInteger.valueOf(l)).shiftRight(30).longValueExact() + m;
+        pu = lin.add(BigInteger.valueOf(u)).shiftRight(30).longValueExact() + m;
+        assert pl <= pm.pr0.result;
+        assert pu >= pm.pr0.result;
+        al = pl >> 14;
+        au = pu >> 14;
+        if (printDebug && al != au) {
+            System.out.println("6:adcOut=" + adcOut + " xs=" + xs + " result=" + Long.toHexString(pm.pr0.result)
+                    + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
+                    + " m+l=" + Long.toHexString(al)
+                    + " m+u=" + Long.toHexString(au));
+        }
+    }
+
     public static void main(String[] args) {
         boolean fixBugP = false;
         List<List<PolyState.Inp>> inps = Arrays.asList(Arrays.asList(PolyState.Inp.genNom()));
@@ -499,74 +596,7 @@ public class IntModel {
                     PolyModel pm = PolyModel.computePolyModel(inp, fixBugP);
 
                     IntModel im = new IntModel(pm.xs, fixBugP);
-                    im.setMLU(inp.K1BIT, inp.K2BIT, inp.K3BIT, inp.K4BIT, inp.K5BIT);
-                    assert im.l == 0 && im.u == 0;
-                    assert im.m == pm.pr0.result;
-
-                    im.setMLU(inp.K2BIT, inp.K3BIT, inp.K4BIT, inp.K5BIT);
-                    long lin = im.k1 * inp.K1BIT;
-                    assert im.m + ((im.l + lin) >> 30) <= pm.pr0.result;
-                    assert im.m + ((im.u + lin) >> 30) >= pm.pr0.result;
-                    long l = im.m + ((im.l + lin) >> 30) >> 14;
-                    long u = im.m + ((im.u + lin) >> 30) >> 14;
-                    if (l != u) {
-                        System.out.println("2:adcOut=" + adcOut + " xs=" + im.xs + " result=" + Long.toHexString(pm.pr0.result)
-                                + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
-                                + " m+l=" + Long.toHexString(l)
-                                + " m+u=" + Long.toHexString(u));
-                    }
-
-                    im.setMLU(inp.K3BIT, inp.K4BIT, inp.K5BIT);
-                    lin = im.k1 * inp.K1BIT + im.k2 * inp.K2BIT;
-                    assert im.m + ((im.l + lin) >> 30) <= pm.pr0.result;
-                    assert im.m + ((im.u + lin) >> 30) >= pm.pr0.result;
-                    l = im.m + ((im.l + lin) >> 30) >> 14;
-                    u = im.m + ((im.u + lin) >> 30) >> 14;
-                    if (l != u) {
-                        System.out.println("3:adcOut=" + adcOut + " xs=" + im.xs + " result=" + Long.toHexString(pm.pr0.result)
-                                + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
-                                + " m+l=" + Long.toHexString(l)
-                                + " m+u=" + Long.toHexString(u));
-                    }
-
-                    im.setMLU(inp.K4BIT, inp.K5BIT);
-                    lin = im.k1 * inp.K1BIT + im.k2 * inp.K2BIT + im.k3 * inp.K3BIT;
-                    assert im.m + ((im.l + lin) >> 30) <= pm.pr0.result;
-                    assert im.m + ((im.u + lin) >> 30) >= pm.pr0.result;
-                    l = im.m + ((im.l + lin) >> 30) >> 14;
-                    u = im.m + ((im.u + lin) >> 30) >> 14;
-                    if (l != u) {
-                        System.out.println("4:adcOut=" + adcOut + " xs=" + im.xs + " result=" + Long.toHexString(pm.pr0.result)
-                                + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
-                                + " m+l=" + Long.toHexString(l)
-                                + " m+u=" + Long.toHexString(u));
-                    }
-
-                    im.setMLU(inp.K5BIT);
-                    lin = im.k1 * inp.K1BIT + im.k2 * inp.K2BIT + im.k3 * inp.K3BIT + im.k4 * inp.K4BIT;
-                    assert im.m + ((im.l + lin) >> 30) <= pm.pr0.result;
-                    assert im.m + ((im.u + lin) >> 30) >= pm.pr0.result;
-                    l = im.m + ((im.l + lin) >> 30) >> 14;
-                    u = im.m + ((im.u + lin) >> 30) >> 14;
-                    if (l != u) {
-                        System.out.println("5:adcOut=" + adcOut + " xs=" + im.xs + " result=" + Long.toHexString(pm.pr0.result)
-                                + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
-                                + " m+l=" + Long.toHexString(l)
-                                + " m+u=" + Long.toHexString(u));
-                    }
-
-                    im.setMLU();
-                    lin = im.k1 * inp.K1BIT + im.k2 * inp.K2BIT + im.k3 * inp.K3BIT + im.k4 * inp.K4BIT + im.k5 * inp.K5BIT;
-                    assert im.m + ((im.l + lin) >> 30) <= pm.pr0.result;
-                    assert im.m + ((im.u + lin) >> 30) >= pm.pr0.result;
-                    l = im.m + ((im.l + lin) >> 30) >> 14;
-                    u = im.m + ((im.u + lin) >> 30) >> 14;
-                    if (l != u) {
-                        System.out.println("6:adcOut=" + adcOut + " xs=" + im.xs + " result=" + Long.toHexString(pm.pr0.result)
-                                + " result>>=" + Long.toHexString(pm.pr0.result >> 14)
-                                + " m+l=" + Long.toHexString(l)
-                                + " m+u=" + Long.toHexString(u));
-                    }
+                    im.check(inp, adcOut, true);
                 }
             }
         }

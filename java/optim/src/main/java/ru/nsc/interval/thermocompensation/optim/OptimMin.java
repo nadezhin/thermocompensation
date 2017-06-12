@@ -26,6 +26,7 @@ import org.apache.commons.math3.linear.SingularMatrixException;
 import org.apache.commons.math3.util.Precision;
 import ru.nsc.interval.thermocompensation.model.IntModel;
 import ru.nsc.interval.thermocompensation.model.PolyModel;
+import ru.nsc.interval.thermocompensation.model.PolyState;
 
 /**
  *
@@ -77,7 +78,7 @@ public class OptimMin {
         numAdcOuts = adcOuts.length;
         intModelByAdcOut = new int[numAdcOuts];
         for (int i = 0; i < numAdcOuts; i++) {
-            int xs = PolyModel.calcXS(infbit, sbit, adcOuts[i]);
+            int xs = PolyModel.computeXs(infbit, sbit, adcOuts[i], fixBugP);
             if (intModels.isEmpty() || intModels.get(intModels.size() - 1).xs != xs) {
                 intModelByAdcOut[i] = intModels.size();
                 intModels.add(new IntModel(xs, fixBugP));
@@ -97,12 +98,35 @@ public class OptimMin {
             lm[j] = Math.max(lm[j], l[i]);
             um[j] = Math.min(um[j], u[i]);
         }
-        fillRows();
+        fillRows(null);
         double[] sol = checkSol();
         return sol;
     }
 
-    private void fillRows() {
+    public double[] optimDebug(int[] l, int[] u, PolyState.Inp debugInp) {
+        assert infbit == debugInp.INF;
+        assert sbit == debugInp.SBIT;
+        Arrays.fill(lm, 0);
+        Arrays.fill(um, 0xFFF);
+        for (int i = 0; i < numAdcOuts; i++) {
+            int j = intModelByAdcOut[i];
+            lm[j] = Math.max(lm[j], l[i]);
+            um[j] = Math.min(um[j], u[i]);
+            int xs = PolyModel.computeXs(infbit, sbit, adcOuts[i], fixBugP);
+            IntModel im = intModels.get(j);
+            debugInp.T = adcOuts[i];
+            PolyModel pm = PolyModel.computePolyModel(debugInp, fixBugP);
+            assert pm.xs == xs;
+            assert im.xs == xs;
+            assert im.fixBugP == fixBugP;
+            im.check(debugInp, adcOuts[i], false);
+        }
+        fillRows(debugInp);
+        double[] sol = checkSol();
+        return sol;
+    }
+
+    private void fillRows(PolyState.Inp debugInp) {
         int rowNum = 0;
         for (int i = 0; i < intModels.size(); i++) {
             if (lm[i] > 0) {
@@ -122,6 +146,15 @@ public class OptimMin {
             IntModel intModel = intModels.get(i);
             intModel.setMLU();
 
+            BigInteger v = null;
+            if (debugInp != null) {
+                v = BigInteger.valueOf(intModel.k1).multiply(BigInteger.valueOf(debugInp.K1BIT))
+                        .add(BigInteger.valueOf(intModel.k2).multiply(BigInteger.valueOf(debugInp.K2BIT)))
+                        .add(BigInteger.valueOf(intModel.k3).multiply(BigInteger.valueOf(debugInp.K3BIT)))
+                        .add(BigInteger.valueOf(intModel.k4).multiply(BigInteger.valueOf(debugInp.K4BIT)))
+                        .add(BigInteger.valueOf(intModel.k5).multiply(BigInteger.valueOf(debugInp.K5BIT)));
+            }
+
             if (lm[i] > 0) {
                 setA0Scaled(rowNum, k1bit, -intModel.k1);
                 setA0Scaled(rowNum, k2bit, -intModel.k2);
@@ -129,9 +162,13 @@ public class OptimMin {
                 setA0Scaled(rowNum, k4bit, -intModel.k4);
                 setA0Scaled(rowNum, k5bit, -intModel.k5);
                 setA0(rowNum, opt, -1.0);
-                long lbound = (((long) lm[i]) << 14) - (1L << 13);
-                setRhsScaled(rowNum, intModel.m - lbound, intModel.l);
+                long lbound = ((long) lm[i]) << 14;
+                setRhsScaled(rowNum, intModel.m - lbound, intModel.u);
                 constrNames[rowNum] = "lxs" + intModel.xs;
+                if (v != null) {
+                    long u = v.add(BigInteger.valueOf(intModel.u)).shiftRight(30).longValueExact();
+                    assert u + intModel.m >= lbound;
+                }
                 rowNum++;
             }
             if (um[i] < 0xFFF) {
@@ -141,9 +178,13 @@ public class OptimMin {
                 setA0Scaled(rowNum, k4bit, intModel.k4);
                 setA0Scaled(rowNum, k5bit, intModel.k5);
                 setA0(rowNum, opt, -1.0);
-                long ubound = (((long) um[i]) << 14) + (1L << 13) - 1;
-                setRhsScaled(rowNum, ubound - intModel.m, -intModel.u);
+                long ubound = ((long) (um[i] + 1)) << 14;
+                setRhsScaled(rowNum, ubound - intModel.m, -intModel.l - 1);
                 constrNames[rowNum] = "hxs" + intModel.xs;
+                if (v != null) {
+                    long l = v.add(BigInteger.valueOf(intModel.l)).add(BigInteger.ONE).shiftRight(30).longValueExact();
+                    assert l + intModel.m <= ubound;
+                }
                 rowNum++;
             }
         }
