@@ -2,96 +2,81 @@
 ...+..+.+.++.+...+.+............................................
 Chip 4 f0=1.2E7 CC=0 CF=0
  48 16 101 108 3 24 9 0 0 0 7 +-0.8928029669138294
-13 sec
-10 sec
+33 sec
+22 sec
 SPECI heuristic: 0.8928029669138294
 MANUF heuristic: 0.8928029669138294
 SPECI enhanced:  0.8928029669138294
 MANUF enhanced:  0.8928029669138294
-
-(gnuplot.exe:2660): Pango-WARNING **: couldn't load font "Helvetica Not-Rotated 40", falling back to "Sans Not-Rotated 40", expect ugly output.
 -------
 Chip 7 f0=1.2E7 CC=0 CF=0
  63 18 71 115 4 26 5 0 0 0 7 +-1.2315869110946855
-7 sec
-10 sec
+16 sec
+21 sec
 SPECI heuristic: 1.2315869110946855
 MANUF heuristic: 1.2315869110946855
 SPECI enhanced:  1.2315869110946855
 MANUF enhanced:  1.2315869110946855
-
-(gnuplot.exe:3244): Pango-WARNING **: couldn't load font "Helvetica Not-Rotated 40", falling back to "Sans Not-Rotated 40", expect ugly output.
 -------
 Chip 9 f0=1.2E7 CC=0 CF=0
  63 16 93 124 4 24 7 0 0 0 7 +-1.4624188905581834
-6 sec
+14 sec
+ 63 16 92 125 4 24 7 0 0 0 7 +-1.4533285312354567
  63 16 93 125 4 24 7 0 0 0 7 +-1.4349015876650812
  63 17 87 117 3 24 6 0 0 0 7 +-1.407384284771979
-13 sec
+28 sec
 SPECI heuristic: 1.4624188905581834
 MANUF heuristic: 1.4624188905581834
 SPECI enhanced:  1.407384284771979
 MANUF enhanced:  1.407384284771979
-
-(gnuplot.exe:5760): Pango-WARNING **: couldn't load font "Helvetica Not-Rotated 40", falling back to "Sans Not-Rotated 40", expect ugly output.
 -------
 Chip 11 f0=1.2E7 CC=0 CF=0
  53 14 120 126 0 28 15 0 0 0 7 +-1.0456377674515052
-15 sec
-9 sec
+38 sec
+19 sec
 SPECI heuristic: 1.0456377674515052
 MANUF heuristic: 1.0456377674515052
 SPECI enhanced:  1.0456377674515052
 MANUF enhanced:  1.0456377674515052
-
-(gnuplot.exe:4876): Pango-WARNING **: couldn't load font "Helvetica Not-Rotated 40", falling back to "Sans Not-Rotated 40", expect ugly output.
 -------
 Chip 12 f0=1.2E7 CC=0 CF=0
  57 13 147 124 12 20 9 0 0 0 7 +-0.5773469999743006
-15 sec
-14 sec
+36 sec
+ 57 13 143 124 9 20 10 0 0 0 7 +-0.5762972693579893
+34 sec
 SPECI heuristic: 0.5773469999743006
 MANUF heuristic: 0.5773469999743006
-SPECI enhanced:  0.5773469999743006
-MANUF enhanced:  0.5773469999743006
-
-(gnuplot.exe:4560): Pango-WARNING **: couldn't load font "Helvetica Not-Rotated 40", falling back to "Sans Not-Rotated 40", expect ugly output.
+SPECI enhanced:  0.5762972693579893
+MANUF enhanced:  0.5762972693579893
 -------
 Chip 14 f0=1.2E7 CC=0 CF=0
  62 14 137 116 3 22 10 0 0 0 7 +-0.7239909605123104
-13 sec
-13 sec
+34 sec
+30 sec
 SPECI heuristic: 0.7239909605123104
 MANUF heuristic: 0.7239909605123104
 SPECI enhanced:  0.7239909605123104
 MANUF enhanced:  0.7239909605123104
-
-(gnuplot.exe:4368): Pango-WARNING **: couldn't load font "Helvetica Not-Rotated 40", falling back to "Sans Not-Rotated 40", expect ugly output.
 -------
 Chip 18 f0=1.2E7 CC=0 CF=0
  63 20 104 94 5 25 4 0 0 0 7 +-1.3525082164754474
-7 sec
+15 sec
  63 16 129 125 11 25 7 0 0 0 7 +-1.3360338310400648
  63 16 127 124 8 25 8 0 0 0 7 +-1.327823012756805
  63 16 128 123 9 26 8 0 0 0 7 +-1.3262542778005204
- 63 17 122 116 9 25 6 0 0 0 7 +-1.322273359478762
- 63 20 104 95 5 25 4 0 0 0 7 +-1.3107805002170307
-16 sec
+ 63 17 122 120 9 24 6 0 0 0 7 +-1.3061190076793237
+30 sec
 SPECI heuristic: 1.3525082164754474
 MANUF heuristic: 1.3525082164754474
-SPECI enhanced:  1.3107805002170307
-MANUF enhanced:  1.3107805002170307
-
-(gnuplot.exe:2664): Pango-WARNING **: couldn't load font "Helvetica Not-Rotated 40", falling back to "Sans Not-Rotated 40", expect ugly output.
+SPECI enhanced:  1.3061190076793237
+MANUF enhanced:  1.3061190076793237
 -------
 Chip 20 f0=1.2E7 CC=0 CF=0
  48 14 133 98 9 22 9 0 0 0 7 +-0.5428636063200734
-16 sec
-12 sec
+36 sec
+26 sec
 SPECI heuristic: 0.5428636063200734
 MANUF heuristic: 0.5428636063200734
 SPECI enhanced:  0.5428636063200734
 MANUF enhanced:  0.5428636063200734
-
-(gnuplot.exe:2760): Pango-WARNING **: couldn't load font "Helvetica Not-Rotated 40", falling back to "Sans Not-Rotated 40", expect ugly output.
 -------
