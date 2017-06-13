@@ -3,6 +3,7 @@ package ru.nsc.interval.thermocompensation.intopt;
 import net.java.jinterval.interval.set.SetInterval;
 import net.java.jinterval.interval.set.SetIntervalContext;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
@@ -34,9 +35,24 @@ public class ThermOpt {
         SetInterval[] currentBox;
         double supOfGlobalOptimum = Double.POSITIVE_INFINITY;
         int cnt = 0;
+
+        double lastInf = Double.MIN_VALUE;
+        double lastSup = Double.MAX_VALUE;
+        int[] lastResult = new int[initialBox.length];
+
         while ((supOfGlobalOptimum - resultHolder.peek().getMinDifferenceBtwU()) > eps) {
             if (++cnt % 100000 == 0) {
                 System.out.println(cnt + ":[" + resultHolder.peek().getMinDifferenceBtwU() + "," + supOfGlobalOptimum + "]");
+                if ((lastInf == resultHolder.peek().getMinDifferenceBtwU()) && (lastSup == supOfGlobalOptimum)) {
+                    if (Arrays.equals(lastResult, result)) {
+                        System.out.println("Break cycle of interval optimization because no improvements");
+                        break;
+                    }
+                }
+
+                lastInf = resultHolder.peek().getMinDifferenceBtwU();
+                lastSup = supOfGlobalOptimum;
+                lastResult = result.clone();
             }
             currentBox = resultHolder.poll().getRecordBox();
             numbOfWidest = 0;
